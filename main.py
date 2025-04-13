@@ -113,3 +113,16 @@ async def send_main_menu(chat_id: int):
 
 Выберите интересующий вас раздел ниже 👇"
     await send_message(chat_id, welcome_text, reply_markup)
+
+async def send_catalog_update(chat_id: int, message_id: int, text: str, reply_markup: dict):
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{TELEGRAM_API_URL}/editMessageText",
+            json={
+                "chat_id": chat_id,
+                "message_id": message_id,
+                "text": text,
+                "reply_markup": reply_markup
+            }
+        )
+        print(f"ОБНОВЛЕНИЕ КАТАЛОГА: {response.status_code} | {response.text}")
