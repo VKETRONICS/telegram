@@ -74,7 +74,16 @@ async def telegram_webhook(request: Request):
                     "keyboard": [[{"text": "📋 Меню"}]],
                     "resize_keyboard": True
                 })
-            else:
+            
+            elif user_states.get(chat_id) != "gpt" and any(word in text.lower() for word in ["помощь", "подбери", "ноутбук", "пк", "игровой"]):
+                dialog_history.setdefault(chat_id, [])
+                dialog_history[chat_id].append({"role": "user", "content": text})
+                gpt_response = await ask_gpt(dialog_history[chat_id])
+                dialog_history[chat_id].append({"role": "assistant", "content": gpt_response})
+                if len(dialog_history[chat_id]) > 20:
+                    dialog_history[chat_id] = dialog_history[chat_id][-20:]
+                await send_message(chat_id, gpt_response)
+else:
                 await send_message(chat_id, "Пожалуйста, выберите пункт меню или нажмите /start")
 
     elif "callback_query" in data:
