@@ -215,3 +215,12 @@ async def send_daily_greeting():
         }
         text = "Доброе утро, друзья! ☀️\nГотов помочь с подбором техники, ответить на вопросы или подсказать с выбором 💻"
         await send_message(int(chat_id), text, reply_markup)
+
+# Обработка подкатегорий ноутбуков
+@app.post("/laptop_gaming")
+async def handle_laptop_gaming():
+    pass
+
+@app.post("/laptop_work")
+async def handle_laptop_work():
+    pass
