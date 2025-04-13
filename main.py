@@ -28,12 +28,11 @@ async def telegram_webhook(request: Request):
         if chat_id and text:
             if text == "/start":
                 user_states[chat_id] = "menu"
+                dialog_history.pop(chat_id, None)
                 await send_main_menu(chat_id)
             elif text in ["/menu", "📋 Меню"]:
                 user_states[chat_id] = "menu"
                 dialog_history.pop(chat_id, None)
-                await send_main_menu(chat_id)
-                user_states[chat_id] = "menu"
                 await send_main_menu(chat_id)
             elif text in ["ℹ️ О нас", "О нас"]:
                 about_text = (
@@ -59,10 +58,13 @@ async def telegram_webhook(request: Request):
                 await send_catalog_menu(chat_id)
             elif text == "❓ Помощь":
                 user_states[chat_id] = "gpt"
-                await send_message(chat_id, "🧠 Я готов помочь! Напишите свой вопрос. Для возврата в меню напишите /menu")
+                dialog_history[chat_id] = []
+                await send_message(chat_id, "🧠 Я готов помочь! Напишите свой вопрос. Для возврата нажмите 📋 Меню", {
+                    "keyboard": [[{"text": "📋 Меню"}]],
+                    "resize_keyboard": True
+                })
             elif user_states.get(chat_id) == "gpt":
-                if chat_id not in dialog_history:
-                    dialog_history[chat_id] = [{"role": "user", "content": text}]
+                dialog_history.setdefault(chat_id, [])
                 dialog_history[chat_id].append({"role": "user", "content": text})
                 gpt_response = await ask_gpt(dialog_history[chat_id])
                 dialog_history[chat_id].append({"role": "assistant", "content": gpt_response})
@@ -72,13 +74,6 @@ async def telegram_webhook(request: Request):
                     "keyboard": [[{"text": "📋 Меню"}]],
                     "resize_keyboard": True
                 })
-                if chat_id not in dialog_history:
-                    dialog_history[chat_id] = [{"role": "user", "content": text}]
-gpt_response = await ask_gpt(dialog_history[chat_id])
-                await send_message(chat_id, gpt_response, {
-        "keyboard": [[{"text": "📋 Меню"}]],
-        "resize_keyboard": True
-    })
             else:
                 await send_message(chat_id, "Пожалуйста, выберите пункт меню или нажмите /start")
 
