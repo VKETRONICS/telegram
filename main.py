@@ -61,7 +61,8 @@ async def telegram_webhook(request: Request):
                 user_states[chat_id] = "gpt"
                 await send_message(chat_id, "🧠 Я готов помочь! Напишите свой вопрос. Для возврата в меню напишите /menu")
             elif user_states.get(chat_id) == "gpt":
-                dialog_history.setdefault(chat_id, [])
+                if chat_id not in dialog_history:
+                    dialog_history[chat_id] = [{"role": "user", "content": text}]
                 dialog_history[chat_id].append({"role": "user", "content": text})
                 gpt_response = await ask_gpt(dialog_history[chat_id])
                 dialog_history[chat_id].append({"role": "assistant", "content": gpt_response})
@@ -71,7 +72,9 @@ async def telegram_webhook(request: Request):
                     "keyboard": [[{"text": "📋 Меню"}]],
                     "resize_keyboard": True
                 })
-                gpt_response = await ask_gpt(text)
+                if chat_id not in dialog_history:
+                    dialog_history[chat_id] = [{"role": "user", "content": text}]
+gpt_response = await ask_gpt(dialog_history[chat_id])
                 await send_message(chat_id, gpt_response, {
         "keyboard": [[{"text": "📋 Меню"}]],
         "resize_keyboard": True
