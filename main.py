@@ -117,6 +117,7 @@ async def telegram_webhook(request: Request):
                 await send_message(chat_id, "Пожалуйста, выберите пункт меню или нажмите /start")
 
     
+    
     elif "callback_query" in data:
         callback = data["callback_query"]
         chat_id = callback["message"]["chat"]["id"]
@@ -133,7 +134,6 @@ async def telegram_webhook(request: Request):
             await send_message(chat_id, "🧠 Напишите свой вопрос, и я постараюсь помочь!")
         elif data_value == "catalog":
             await send_catalog_menu(chat_id)
-        
         elif data_value == "laptops":
             sub_markup = {
                 "inline_keyboard": [
@@ -142,14 +142,15 @@ async def telegram_webhook(request: Request):
                 ]
             }
             async with httpx.AsyncClient() as client:
-                response = await client.post(f"{TELEGRAM_API_URL}/editMessageText", json={{
+                response = await client.post(f"{TELEGRAM_API_URL}/editMessageText", json={
                     "chat_id": chat_id,
                     "message_id": callback["message"]["message_id"],
                     "text": "💻 Выберите тип ноутбука:",
-                    "reply_markup": dumps(sub_markup)
-                }})
+                    "reply_markup": sub_markup
+                })
                 print(f"ОБНОВЛЕНИЕ СООБЩЕНИЯ: {response.status_code} | {response.text}")
-return {"ok": True}
+        return {"ok": True}
+
 
 
 sent_messages = {}
