@@ -3,17 +3,39 @@ import httpx
 import os
 from dotenv import load_dotenv
 import openai
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 load_dotenv()
 
 app = FastAPI()
+scheduler = AsyncIOScheduler()
+scheduler.start()
+
+scheduler = AsyncIOScheduler()
+scheduler.start()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
-
 user_states = {}
 dialog_history = {}
+
+@app.on_event("startup")
+async def schedule_daily_greeting():
+    from pytz import timezone
+    msk = timezone("Europe/Moscow")
+    scheduler.add_job(send_daily_greeting, "cron", hour=10, minute=0, timezone=msk)
+
+async def send_daily_greeting():
+    chat_id = os.getenv("GROUP_CHAT_ID")
+    if chat_id:
+        reply_markup = {
+            "inline_keyboard": [
+                [{"text": "🔧 Помощь с выбором", "callback_data": "ask"}]
+            ]
+        }
+        text = "Доброе утро, друзья! ☀️\nГотов помочь с подбором техники, ответить на вопросы или подсказать с выбором 💻"
+        await send_message(int(chat_id), text, reply_markup)
 
 @app.post("/webhook")
 async def telegram_webhook(request: Request):
@@ -26,22 +48,23 @@ async def telegram_webhook(request: Request):
         print(f"ПОЛУЧЕНО СООБЩЕНИЕ: {text}")
 
         if chat_id and text:
-            if text == "/bot":
-                reply_markup = {
-                    "inline_keyboard": [
-                        [{"text": "🧠 Спросить у бота", "callback_data": "ask"}]
-                    ]
-                }
-                await send_message(chat_id, "Нажмите кнопку ниже, чтобы задать вопрос:", reply_markup)
-
             if text == "/start":
                 user_states[chat_id] = "menu"
                 dialog_history.pop(chat_id, None)
+                await delete_previous_messages(chat_id)
                 await send_main_menu(chat_id)
             elif text in ["/menu", "📋 Меню"]:
                 user_states[chat_id] = "menu"
                 dialog_history.pop(chat_id, None)
+                await delete_previous_messages(chat_id)
                 await send_main_menu(chat_id)
+            elif text == "/bot":
+                reply_markup = {
+                    "inline_keyboard": [
+                        [{"text": "🔧 Помощь с выбором", "callback_data": "ask"}]
+                    ]
+                }
+                await send_message(chat_id, "Нажмите кнопку ниже, чтобы задать вопрос:", reply_markup)
             elif text in ["ℹ️ О нас", "О нас"]:
                 about_text = (
                     "🔧 ETRONICS — ваш проводник в мире электроники!\n\n"
@@ -98,24 +121,26 @@ async def telegram_webhook(request: Request):
         chat_id = callback["message"]["chat"]["id"]
         data_value = callback.get("data", "")
         print(f"CALLBACK: {data_value}")
-
-        if data_value == "phones":
-            await send_message(chat_id, "📱 Смартфоны скоро будут доступны.")
-        elif data_value == "laptops":
-            await send_message(chat_id, "💻 Раздел ноутбуков в разработке.")
-        elif data_value == "components":
-            await send_message(chat_id, "🖥 Комплектующие появятся совсем скоро.")
-
-    
-    elif "callback_query" in data:
-        callback = data["callback_query"]
-        chat_id = callback["message"]["chat"]["id"]
-        data_value = callback.get("data", "")
-        print(f"CALLBACK: {data_value}")
         if data_value == "ask":
             await send_message(chat_id, "🧠 Напишите свой вопрос, и я постараюсь помочь!")
 
     return {"ok": True}
+
+
+sent_messages = {}
+
+async def delete_previous_messages(chat_id: int):
+    if chat_id in sent_messages:
+        for msg_id in sent_messages[chat_id]:
+            try:
+                async with httpx.AsyncClient() as client:
+                    await client.post(f"{TELEGRAM_API_URL}/deleteMessage", json={
+                        "chat_id": chat_id,
+                        "message_id": msg_id
+                    })
+            except Exception as e:
+                print(f"Ошибка удаления сообщения: {e}")
+        sent_messages[chat_id] = []
 
 async def ask_gpt(messages: list) -> str:
     try:
@@ -143,6 +168,12 @@ async def send_message(chat_id: int, text: str, reply_markup=None):
         async with httpx.AsyncClient() as client:
             response = await client.post(f"{TELEGRAM_API_URL}/sendMessage", json=payload)
             print(f"ОТПРАВКА СООБЩЕНИЯ: {response.status_code} | {response.text}")
+        try:
+            msg_data = response.json()
+            if msg_data.get("ok") and "result" in msg_data:
+                sent_messages.setdefault(chat_id, []).append(msg_data["result"]["message_id"])
+        except Exception as e:
+            print("Ошибка обработки message_id:", e)
     except Exception as e:
         print(f"ОШИБКА ПРИ ОТПРАВКЕ СООБЩЕНИЯ: {e}")
 
@@ -167,3 +198,20 @@ async def send_catalog_menu(chat_id: int):
         ]
     }
     await send_message(chat_id, "Выберите категорию товара:", reply_markup)
+
+@app.on_event("startup")
+async def schedule_daily_greeting():
+    from pytz import timezone
+    msk = timezone("Europe/Moscow")
+    scheduler.add_job(send_daily_greeting, "cron", hour=10, minute=0, timezone=msk)
+
+async def send_daily_greeting():
+    chat_id = os.getenv("GROUP_CHAT_ID")
+    if chat_id:
+        reply_markup = {
+            "inline_keyboard": [
+                [{"text": "🔧 Помощь с выбором", "callback_data": "ask"}]
+            ]
+        }
+        text = "Доброе утро, друзья! ☀️\nГотов помочь с подбором техники, ответить на вопросы или подсказать с выбором 💻"
+        await send_message(int(chat_id), text, reply_markup)
