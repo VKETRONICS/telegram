@@ -48,10 +48,12 @@ async def telegram_webhook(request: Request):
             if text == "/start":
                 user_states[chat_id] = "menu"
                 dialog_history.pop(chat_id, None)
+                await delete_previous_messages(chat_id)
                 await send_main_menu(chat_id)
             elif text in ["/menu", "📋 Меню"]:
                 user_states[chat_id] = "menu"
                 dialog_history.pop(chat_id, None)
+                await delete_previous_messages(chat_id)
                 await send_main_menu(chat_id)
             elif text == "/bot":
                 reply_markup = {
@@ -121,6 +123,22 @@ async def telegram_webhook(request: Request):
 
     return {"ok": True}
 
+
+sent_messages = {}
+
+async def delete_previous_messages(chat_id: int):
+    if chat_id in sent_messages:
+        for msg_id in sent_messages[chat_id]:
+            try:
+                async with httpx.AsyncClient() as client:
+                    await client.post(f"{TELEGRAM_API_URL}/deleteMessage", json={
+                        "chat_id": chat_id,
+                        "message_id": msg_id
+                    })
+            except Exception as e:
+                print(f"Ошибка удаления сообщения: {e}")
+        sent_messages[chat_id] = []
+
 async def ask_gpt(messages: list) -> str:
     try:
         client = openai.OpenAI(api_key=OPENAI_API_KEY)
@@ -147,6 +165,12 @@ async def send_message(chat_id: int, text: str, reply_markup=None):
         async with httpx.AsyncClient() as client:
             response = await client.post(f"{TELEGRAM_API_URL}/sendMessage", json=payload)
             print(f"ОТПРАВКА СООБЩЕНИЯ: {response.status_code} | {response.text}")
+        try:
+            msg_data = response.json()
+            if msg_data.get("ok") and "result" in msg_data:
+                sent_messages.setdefault(chat_id, []).append(msg_data["result"]["message_id"])
+        except Exception as e:
+            print("Ошибка обработки message_id:", e)
     except Exception as e:
         print(f"ОШИБКА ПРИ ОТПРАВКЕ СООБЩЕНИЯ: {e}")
 
