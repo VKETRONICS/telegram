@@ -2,7 +2,6 @@ from fastapi import FastAPI, Request
 import httpx
 import os
 from dotenv import load_dotenv
-import json
 import openai
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
