@@ -53,11 +53,10 @@ async def telegram_webhook(request: Request):
 
     return {"ok": True}
 
-async def send_message(chat_id: int, text: str, reply_markup=None):
-    payload = {
+async def send_message {
         "chat_id": chat_id,
         "text": text,
-        "reply_markup": reply_markup if reply_markup is not None else None
+        
     }
     try:
         async with httpx.AsyncClient() as client:
