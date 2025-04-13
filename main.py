@@ -186,7 +186,7 @@ async def send_main_menu(chat_id: int):
         ],
         "resize_keyboard": True
     }
-    welcome_text = "Добро пожаловать в ETRONICS STORE! Выберите раздел:"
+    welcome_text = "🎉 Добро пожаловать в ETRONICS STORE!\n\nВыберите интересующий вас раздел ниже 👇"
     await send_message(chat_id, welcome_text, reply_markup)
 
 async def send_catalog_menu(chat_id: int):
