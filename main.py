@@ -24,7 +24,7 @@ async def telegram_webhook(request: Request):
                 await send_main_menu(chat_id)
             elif text == "📦 Каталог":
                 await send_catalog_menu(chat_id)
-            elif text == "ℹ️ О нас":
+            elif text in ["ℹ️ О нас", "О нас"]:
                 about_text = (
                     "<b>Мы — команда ETRONICS 💻</b>\n\n"
                     "Ваш надежный партнёр в мире высоких технологий.\n\n"
