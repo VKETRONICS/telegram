@@ -120,6 +120,21 @@ async def telegram_webhook(request: Request):
         callback = data["callback_query"]
         chat_id = callback["message"]["chat"]["id"]
         data_value = callback.get("data", "")
+        elif data_value == "laptops":
+            sub_markup = {
+                "inline_keyboard": [
+                    [{"text": "🎮 Для игр", "callback_data": "laptop_gaming"}, {"text": "💼 Для работы", "callback_data": "laptop_work"}],
+                    [{"text": "⬅️ Назад", "callback_data": "catalog"}]
+                ]
+            }
+            async with httpx.AsyncClient() as client:
+                response = await client.post(f"{TELEGRAM_API_URL}/sendMessage", json={{
+                    "chat_id": chat_id,
+                    "text": "Выберите тип ноутбука:",
+                    "reply_markup": sub_markup
+                }})
+                print(f"ОТПРАВКА ПОДМЕНЮ НОУТБУКОВ: {response.status_code} | {response.text}")
+
         print(f"CALLBACK: {data_value}")
         if data_value not in ["phones", "laptops", "components", "ask", "catalog", "laptop_gaming", "laptop_work"]:
             print("⚠️ НЕОЖИДАННОЕ ЗНАЧЕНИЕ callback_data:", data_value)
