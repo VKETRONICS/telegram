@@ -56,6 +56,7 @@ async def telegram_webhook(request: Request):
     elif "callback_query" in data:
         callback = data["callback_query"]
         chat_id = callback["message"]["chat"]["id"]
+        message_id = callback["message"]["message_id"]
         data_value = callback.get("data", "")
         print(f"CALLBACK: {data_value}")
 
@@ -67,7 +68,7 @@ async def telegram_webhook(request: Request):
                     [{"text": "⬅️ Назад", "callback_data": "catalog"}]
                 ]
             }
-            await send_catalog_update(chat_id, callback["message"]["message_id"], "💻 Выберите подкатегорию:", sub_markup)
+            await send_catalog_update(chat_id, message_id, "💻 Выберите подкатегорию:", sub_markup)
 
         elif data_value == "laptop_workstudy":
             sub_markup = {
@@ -79,7 +80,7 @@ async def telegram_webhook(request: Request):
                     [{"text": "⬅️ Назад", "callback_data": "laptops"}]
                 ]
             }
-            await send_catalog_update(chat_id, callback["message"]["message_id"], "👨‍🎓 Выберите размер ноутбука:", sub_markup)
+            await send_catalog_update(chat_id, message_id, "👨‍🎓 Выберите размер ноутбука:", sub_markup)
 
         elif data_value == "phones":
             sub_markup = {
@@ -89,10 +90,17 @@ async def telegram_webhook(request: Request):
                     [{"text": "⬅️ Назад", "callback_data": "catalog"}]
                 ]
             }
-            await send_catalog_update(chat_id, callback["message"]["message_id"], "📱 Выберите тип телефона:", sub_markup)
+            await send_catalog_update(chat_id, message_id, "📱 Выберите тип телефона:", sub_markup)
 
         elif data_value == "catalog":
-            await send_catalog_menu(chat_id)
+            reply_markup = {
+                "inline_keyboard": [
+                    [{"text": "💻 Ноутбуки", "callback_data": "laptops"}],
+                    [{"text": "📱 Телефоны", "callback_data": "phones"}],
+                    [{"text": "🖥 Комплектующие", "callback_data": "components"}]
+                ]
+            }
+            await send_catalog_update(chat_id, message_id, "Выберите категорию товара:", reply_markup)
 
     return {"ok": True}
 
