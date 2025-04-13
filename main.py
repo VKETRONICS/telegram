@@ -53,18 +53,21 @@ async def telegram_webhook(request: Request):
 
     return {"ok": True}
 
-async def send_message {
+
+async def send_message(chat_id: int, text: str, reply_markup=None):
+    payload = {
         "chat_id": chat_id,
-        "text": text,
-        
+        "text": text
     }
+    if reply_markup is not None:
+        payload["reply_markup"] = reply_markup
+
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(f"{TELEGRAM_API_URL}/sendMessage", json=payload)
             print(f"ОТПРАВКА СООБЩЕНИЯ: {response.status_code} | {response.text}")
     except Exception as e:
         print(f"ОШИБКА ПРИ ОТПРАВКЕ СООБЩЕНИЯ: {e}")
-
 async def send_main_menu(chat_id: int):
     reply_markup = {
         "keyboard": [
