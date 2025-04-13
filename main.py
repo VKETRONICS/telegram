@@ -26,6 +26,14 @@ async def telegram_webhook(request: Request):
         print(f"ПОЛУЧЕНО СООБЩЕНИЕ: {text}")
 
         if chat_id and text:
+            if text == "/bot":
+                reply_markup = {
+                    "inline_keyboard": [
+                        [{"text": "🧠 Спросить у бота", "callback_data": "ask"}]
+                    ]
+                }
+                await send_message(chat_id, "Нажмите кнопку ниже, чтобы задать вопрос:", reply_markup)
+
             if text == "/start":
                 user_states[chat_id] = "menu"
                 dialog_history.pop(chat_id, None)
@@ -74,7 +82,6 @@ async def telegram_webhook(request: Request):
                     "keyboard": [[{"text": "📋 Меню"}]],
                     "resize_keyboard": True
                 })
-            
             elif user_states.get(chat_id) != "gpt" and any(word in text.lower() for word in ["помощь", "подбери", "ноутбук", "пк", "игровой"]):
                 dialog_history.setdefault(chat_id, [])
                 dialog_history[chat_id].append({"role": "user", "content": text})
@@ -83,7 +90,7 @@ async def telegram_webhook(request: Request):
                 if len(dialog_history[chat_id]) > 20:
                     dialog_history[chat_id] = dialog_history[chat_id][-20:]
                 await send_message(chat_id, gpt_response)
-else:
+            else:
                 await send_message(chat_id, "Пожалуйста, выберите пункт меню или нажмите /start")
 
     elif "callback_query" in data:
@@ -98,6 +105,15 @@ else:
             await send_message(chat_id, "💻 Раздел ноутбуков в разработке.")
         elif data_value == "components":
             await send_message(chat_id, "🖥 Комплектующие появятся совсем скоро.")
+
+    
+    elif "callback_query" in data:
+        callback = data["callback_query"]
+        chat_id = callback["message"]["chat"]["id"]
+        data_value = callback.get("data", "")
+        print(f"CALLBACK: {data_value}")
+        if data_value == "ask":
+            await send_message(chat_id, "🧠 Напишите свой вопрос, и я постараюсь помочь!")
 
     return {"ok": True}
 
