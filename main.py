@@ -24,31 +24,14 @@ async def telegram_webhook(request: Request):
             if text == "/start":
                 await send_main_menu(chat_id)
             elif text in ["ℹ️ О нас", "О нас"]:
-                about_text = (
-                    "<b>Мы — команда ETRONICS 💻</b>\n\n"
-                    "Ваш надежный партнёр в мире высоких технологий.\n\n"
-                    "<b>Мы занимаемся:</b>\n"
-                    "• Сборкой ПК под любые задачи\n"
-                    "• Продажей ноутбуков ведущих брендов\n"
-                    "• Аксессуарами: клавиатуры, мыши, наушники и др.\n\n"
-                    "<b>Преимущества:</b>\n"
-                    "• Индивидуальный подход\n"
-                    "• Гарантия качества\n"
-                    "• Доступные цены\n"
-                    "• Быстрая доставка\n"
-                    "• Поддержка и обслуживание\n\n"
-                    "<b>Ассортимент:</b>\n"
-                    "• Игровые и офисные ПК\n"
-                    "• Ноутбуки для учёбы и работы\n"
-                    "• Аксессуары и накопители"
-                )
-                await send_message(chat_id, about_text)
+                await send_message(chat_id, "ETRONICS — сборка ПК, ноутбуки и аксессуары. Работаем по России. Поддержка и доставка.")
             elif text == "📦 Каталог":
                 await send_catalog_menu(chat_id)
             elif text == "📞 Контакты":
-                await send_message(chat_id, "📧 support@etronics.ru\n📱 @etronics_support")
+                await send_message(chat_id, "📧 support@etronics.ru
+📱 @etronics_support")
             elif text == "❓ Помощь":
-                await send_message(chat_id, "Напишите свой вопрос, и мы поможем как можно скорее.")
+                await send_message(chat_id, "Задайте вопрос, и мы с радостью ответим.")
             else:
                 await send_message(chat_id, f"Вы написали: {text}")
 
@@ -59,11 +42,11 @@ async def telegram_webhook(request: Request):
         print(f"CALLBACK: {data_value}")
 
         if data_value == "phones":
-            await send_message(chat_id, "📱 Раздел смартфонов скоро появится!")
+            await send_message(chat_id, "📱 Смартфоны скоро будут доступны.")
         elif data_value == "laptops":
             await send_message(chat_id, "💻 Раздел ноутбуков в разработке.")
         elif data_value == "components":
-            await send_message(chat_id, "🖥 Здесь будут комплектующие для сборки ПК.")
+            await send_message(chat_id, "🖥 Комплектующие появятся совсем скоро.")
 
     return {"ok": True}
 
@@ -71,8 +54,7 @@ async def send_message(chat_id: int, text: str, reply_markup=None):
     payload = {
         "chat_id": chat_id,
         "text": text,
-        "reply_markup": reply_markup,
-        "parse_mode": "HTML"
+        "reply_markup": reply_markup
     }
     async with httpx.AsyncClient() as client:
         await client.post(f"{TELEGRAM_API_URL}/sendMessage", json=payload)
@@ -86,7 +68,7 @@ async def send_main_menu(chat_id: int):
         ],
         "resize_keyboard": True
     }
-    welcome_text = "<b>Добро пожаловать в ETRONICS STORE! 🛍</b>\nВыберите интересующий вас раздел ниже 👇"
+    welcome_text = "Добро пожаловать в ETRONICS STORE! Выберите раздел:"
     await send_message(chat_id, welcome_text, reply_markup)
 
 async def send_catalog_menu(chat_id: int):
@@ -97,4 +79,4 @@ async def send_catalog_menu(chat_id: int):
             [{"text": "🖥 Комплектующие", "callback_data": "components"}]
         ]
     }
-    await send_message(chat_id, "Выберите категорию товара 👇", reply_markup)
+    await send_message(chat_id, "Выберите категорию товара:", reply_markup)
