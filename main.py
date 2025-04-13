@@ -141,11 +141,11 @@ async def telegram_webhook(request: Request):
                 ]
             }
             async with httpx.AsyncClient() as client:
-                response = await client.post(f"{TELEGRAM_API_URL}/sendMessage", json={{
+                response = await client.post(f"{TELEGRAM_API_URL}/sendMessage", json={
                     "chat_id": chat_id,
                     "text": "Выберите тип ноутбука:",
                     "reply_markup": sub_markup
-                }})
+                })
                 print(f"ОТПРАВКА ПОДМЕНЮ НОУТБУКОВ: {response.status_code} | {response.text}")
 
     return {"ok": True}
