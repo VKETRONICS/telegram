@@ -121,6 +121,8 @@ async def telegram_webhook(request: Request):
         chat_id = callback["message"]["chat"]["id"]
         data_value = callback.get("data", "")
         print(f"CALLBACK: {data_value}")
+        if data_value not in ["phones", "laptops", "components", "ask", "catalog", "laptop_gaming", "laptop_work"]:
+            print("⚠️ НЕОЖИДАННОЕ ЗНАЧЕНИЕ callback_data:", data_value)
         if data_value == "ask":
             await send_message(chat_id, "🧠 Напишите свой вопрос, и я постараюсь помочь!")
 
