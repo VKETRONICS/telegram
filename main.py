@@ -153,6 +153,23 @@ async def telegram_webhook(request: Request):
         elif data_value == "clear":
             await delete_previous_messages(chat_id)
             await send_message(chat_id, "✅ Чат очищен! Вы можете вручную удалить и свои сообщения 😊")
+        elif data_value == "catalog":
+            await send_catalog_menu(chat_id)
+        elif data_value == "about":
+            await send_message(chat_id, "🔧 ETRONICS — ваш проводник в мире электроники!\n\n💻 Сборка ПК, ноутбуки, аксессуары.\n📲 support@etronics.pro")
+        elif data_value == "contacts":
+            await send_message(chat_id, "📧 support@etronics.pro\n📱 @etronics_support")
+        elif data_value == "help":
+            user_states[chat_id] = "gpt"
+            dialog_history[chat_id] = []
+            await send_message(chat_id, "🧠 Напишите свой вопрос. Для выхода нажмите 📋 Меню", {
+                "keyboard": [[{"text": "📋 Меню"}]],
+                "resize_keyboard": True
+            })
+            await send_message(chat_id, "🧠 Напишите свой вопрос, и я постараюсь помочь!")
+        elif data_value == "clear":
+            await delete_previous_messages(chat_id)
+            await send_message(chat_id, "✅ Чат очищен! Вы можете вручную удалить и свои сообщения 😊")
             await send_message(chat_id, "🧠 Напишите свой вопрос, и я постараюсь помочь!")
 
     return {"ok": True}
