@@ -23,7 +23,7 @@ async def telegram_webhook(request: Request):
         message = data["message"]
         chat_id = message.get("chat", {}).get("id")
         text = message.get("text", "")
-        print(f"\nПОЛУЧЕНО СООБЩЕНИЕ: {text}")
+        print(f"ПОЛУЧЕНО СООБЩЕНИЕ: {text}")
 
         if chat_id and text:
             if text == "/start" or text == "/menu":
@@ -33,7 +33,7 @@ async def telegram_webhook(request: Request):
             elif text == "📦 Каталог":
                 await send_catalog_menu(chat_id)
             elif text == "ℹ️ О нас":
-                await send_message(chat_id, "🔧 ETRONICS — ваш проводник в мире электроники! 💻📱🔥")
+                await send_message(chat_id, "🔧 ETRONICS — ваш проводник в мире электроники! 💻📱🖥")
             elif text == "📞 Контакты":
                 await send_message(chat_id, "📧 support@etronics.pro\n📱 @etronics_support")
             elif text == "❓ Помощь":
@@ -72,24 +72,27 @@ async def telegram_webhook(request: Request):
         elif data_value == "laptop_workstudy":
             sub_markup = {
                 "inline_keyboard": [
-                    [{"text": "💻 12–14\u2033", "callback_data": "work_12_14"}],
-                    [{"text": "💻 15–16\u2033", "callback_data": "work_15_16"}],
-                    [{"text": "💻 17–18\u2033", "callback_data": "work_17_18"}],
+                    [{"text": "💻 12–14", "callback_data": "work_12_14"}],
+                    [{"text": "💻 15–16", "callback_data": "work_15_16"}],
+                    [{"text": "💻 17–18", "callback_data": "work_17_18"}],
                     [{"text": "📋 Весь список (все размеры)", "callback_data": "work_full_list"}],
                     [{"text": "⬅️ Назад", "callback_data": "laptops"}]
                 ]
             }
             await send_catalog_update(chat_id, callback["message"]["message_id"], "👨‍🎓 Выберите размер ноутбука:", sub_markup)
 
-        elif data_value == "catalog":
-            catalog_markup = {
+        elif data_value == "phones":
+            sub_markup = {
                 "inline_keyboard": [
-                    [{"text": "💻 Ноутбуки", "callback_data": "laptops"}],
-                    [{"text": "📱 Смартфоны", "callback_data": "phones"}],
-                    [{"text": "🖥 Комплектующие", "callback_data": "components"}]
+                    [{"text": "📱 Смартфоны", "callback_data": "phones_smart"}],
+                    [{"text": "📞 Кнопочные телефоны", "callback_data": "phones_button"}],
+                    [{"text": "⬅️ Назад", "callback_data": "catalog"}]
                 ]
             }
-            await send_catalog_update(chat_id, callback["message"]["message_id"], "Выберите категорию товара:", catalog_markup)
+            await send_catalog_update(chat_id, callback["message"]["message_id"], "📱 Выберите тип телефона:", sub_markup)
+
+        elif data_value == "catalog":
+            await send_catalog_menu(chat_id)
 
     return {"ok": True}
 
@@ -108,7 +111,7 @@ async def send_catalog_menu(chat_id: int):
     reply_markup = {
         "inline_keyboard": [
             [{"text": "💻 Ноутбуки", "callback_data": "laptops"}],
-            [{"text": "📱 Смартфоны", "callback_data": "phones"}],
+            [{"text": "📱 Телефоны", "callback_data": "phones"}],
             [{"text": "🖥 Комплектующие", "callback_data": "components"}]
         ]
     }
