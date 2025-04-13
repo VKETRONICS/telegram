@@ -3,7 +3,6 @@ import httpx
 import os
 from dotenv import load_dotenv
 import openai
-from json import dumps
 
 load_dotenv()
 
@@ -27,18 +26,30 @@ async def telegram_webhook(request: Request):
         print(f"ПОЛУЧЕНО СООБЩЕНИЕ: {text}")
 
         if chat_id and text:
-            if text == "/start":
+            if text == "/start" or text == "/menu":
                 user_states[chat_id] = "menu"
                 dialog_history.pop(chat_id, None)
                 await send_main_menu(chat_id)
-            elif text in ["/menu", "📋 Меню"]:
-                user_states[chat_id] = "menu"
-                dialog_history.pop(chat_id, None)
-                await send_main_menu(chat_id)
+            elif text == "📦 Каталог":
+                await send_catalog_menu(chat_id)
+            elif text == "ℹ️ О нас":
+                await send_message(chat_id, "🔧 ETRONICS — ваш проводник в мире электроники! 💻📱🖥")
+            elif text == "📞 Контакты":
+                await send_message(chat_id, "📧 support@etronics.pro
+📱 @etronics_support")
             elif text == "❓ Помощь":
                 user_states[chat_id] = "gpt"
                 dialog_history[chat_id] = []
                 await send_message(chat_id, "🧠 Я готов помочь! Напишите свой вопрос. Для возврата нажмите 📋 Меню", {
+                    "keyboard": [[{"text": "📋 Меню"}]],
+                    "resize_keyboard": True
+                })
+            elif user_states.get(chat_id) == "gpt":
+                dialog_history.setdefault(chat_id, [])
+                dialog_history[chat_id].append({"role": "user", "content": text})
+                gpt_response = await ask_gpt(dialog_history[chat_id])
+                dialog_history[chat_id].append({"role": "assistant", "content": gpt_response})
+                await send_message(chat_id, gpt_response, {
                     "keyboard": [[{"text": "📋 Меню"}]],
                     "resize_keyboard": True
                 })
@@ -54,37 +65,50 @@ async def telegram_webhook(request: Request):
                 "inline_keyboard": [
                     [{"text": "🎮 Игровые ноутбуки", "callback_data": "laptop_gaming"}],
                     [{"text": "👨‍🎓 Для работы и учёбы", "callback_data": "laptop_workstudy"}],
-                    [{"text": "🧳 Компактные (ультрабуки)", "callback_data": "laptop_ultrabook"}],
                     [{"text": "⬅️ Назад", "callback_data": "catalog"}]
                 ]
             }
-            async with httpx.AsyncClient() as client:
-                response = await client.post(f"{TELEGRAM_API_URL}/editMessageText", json={
-                    "chat_id": chat_id,
-                    "message_id": callback["message"]["message_id"],
-                    "text": "💻 Выберите категорию ноутбуков:",
-                    "reply_markup": sub_markup
-                })
-                print(f"ОБНОВЛЕНИЕ СООБЩЕНИЯ: {response.status_code} | {response.text}")
+            await send_catalog_update(chat_id, callback["message"]["message_id"], "💻 Выберите подкатегорию:", sub_markup)
 
-        elif data_value == "catalog":
-            catalog_markup = {
+        elif data_value == "laptop_workstudy":
+            sub_markup = {
                 "inline_keyboard": [
-                    [{"text": "💻 Ноутбуки", "callback_data": "laptops"}],
-                    [{"text": "📱 Смартфоны", "callback_data": "phones"}],
-                    [{"text": "🖥 Комплектующие", "callback_data": "components"}]
+                    [{"text": "💻 12–14", "callback_data": "work_12_14"}],
+                    [{"text": "💻 15–16", "callback_data": "work_15_16"}],
+                    [{"text": "💻 17–18", "callback_data": "work_17_18"}],
+                    [{"text": "📋 Весь список (все размеры)", "callback_data": "work_full_list"}],
+                    [{"text": "⬅️ Назад", "callback_data": "laptops"}]
                 ]
             }
-            async with httpx.AsyncClient() as client:
-                response = await client.post(f"{TELEGRAM_API_URL}/editMessageText", json={
-                    "chat_id": chat_id,
-                    "message_id": callback["message"]["message_id"],
-                    "text": "📦 Выберите категорию товара:",
-                    "reply_markup": catalog_markup
-                })
-                print(f"ВОЗВРАТ В КАТАЛОГ: {response.status_code} | {response.text}")
+            await send_catalog_update(chat_id, callback["message"]["message_id"], "👨‍🎓 Выберите размер ноутбука:", sub_markup)
 
-    return {"ok": True}
+        elif data_value == "catalog":
+            await send_catalog_menu(chat_id)
+
+    return {"ok": True"}
+
+async def send_main_menu(chat_id: int):
+    reply_markup = {
+        "keyboard": [
+            [{"text": "📦 Каталог"}],
+            [{"text": "ℹ️ О нас"}, {"text": "📞 Контакты"}],
+            [{"text": "❓ Помощь"}]
+        ],
+        "resize_keyboard": True
+    }
+    await send_message(chat_id, "🎉 Добро пожаловать в ETRONICS STORE!
+
+Выберите интересующий вас раздел ниже 👇", reply_markup)
+
+async def send_catalog_menu(chat_id: int):
+    reply_markup = {
+        "inline_keyboard": [
+            [{"text": "💻 Ноутбуки", "callback_data": "laptops"}],
+            [{"text": "📱 Смартфоны", "callback_data": "phones"}],
+            [{"text": "🖥 Комплектующие", "callback_data": "components"}]
+        ]
+    }
+    await send_message(chat_id, "Выберите категорию товара:", reply_markup)
 
 async def send_message(chat_id: int, text: str, reply_markup=None):
     payload = {
@@ -101,19 +125,6 @@ async def send_message(chat_id: int, text: str, reply_markup=None):
     except Exception as e:
         print(f"ОШИБКА ПРИ ОТПРАВКЕ СООБЩЕНИЯ: {e}")
 
-async def send_main_menu(chat_id: int):
-    reply_markup = {
-        "keyboard": [
-            [{"text": "📦 Каталог"}],
-            [{"text": "❓ Помощь"}]
-        ],
-        "resize_keyboard": True
-    }
-                    {"text": "📋 Весь список (все размеры)", "callback_data": "work_full_list"},
-
-Выберите интересующий вас раздел ниже 👇"
-    await send_message(chat_id, welcome_text, reply_markup)
-
 async def send_catalog_update(chat_id: int, message_id: int, text: str, reply_markup: dict):
     async with httpx.AsyncClient() as client:
         response = await client.post(
@@ -126,3 +137,17 @@ async def send_catalog_update(chat_id: int, message_id: int, text: str, reply_ma
             }
         )
         print(f"ОБНОВЛЕНИЕ КАТАЛОГА: {response.status_code} | {response.text}")
+
+async def ask_gpt(messages: list) -> str:
+    try:
+        client = openai.OpenAI(api_key=OPENAI_API_KEY)
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=messages,
+            max_tokens=300,
+            temperature=0.7
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        print(f"GPT ERROR: {e}")
+        return "Произошла ошибка при получении ответа от ИИ 😔"
