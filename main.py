@@ -1,4 +1,4 @@
-\from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request
 import httpx
 import os
 from dotenv import load_dotenv
