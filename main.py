@@ -18,36 +18,15 @@ async def telegram_webhook(request: Request):
         message = data["message"]
         chat_id = message.get("chat", {}).get("id")
         text = message.get("text", "")
+        print(f"ПОЛУЧЕНО СООБЩЕНИЕ: {text}")
 
         if chat_id and text:
             if text == "/start":
                 await send_main_menu(chat_id)
+            elif text in ["ℹ️ О нас", "О нас"]:
+                await send_message(chat_id, "Мы — команда ETRONICS. Работаем с техникой и умными решениями.")
             elif text == "📦 Каталог":
                 await send_catalog_menu(chat_id)
-            elif text in ["ℹ️ О нас", "О нас"]:
-                about_text = (
-                    "<b>Мы — команда ETRONICS 💻</b>\n\n"
-                    "Ваш надежный партнёр в мире высоких технологий.\n\n"
-                    "<b>Мы занимаемся:</b>\n"
-                    "• Сборка ПК под любые задачи\n"
-                    "• Продажа ноутбуков ведущих брендов\n"
-                    "• Аксессуары: клавиатуры, мыши, наушники и др.\n\n"
-                    "<b>Преимущества:</b>\n"
-                    "• Индивидуальный подход\n"
-                    "• Гарантия качества\n"
-                    "• Доступные цены\n"
-                    "• Быстрая доставка\n"
-                    "• Поддержка и обслуживание\n\n"
-                    "<b>Ассортимент:</b>\n"
-                    "• Игровые и офисные ПК\n"
-                    "• Ноутбуки для учёбы и работы\n"
-                    "• Аксессуары и накопители"
-                )
-                await send_message(chat_id, about_text)
-            elif text == "📞 Контакты":
-                await send_message(chat_id, "📧 support@etronics.ru\n📱 @etronics_support")
-            elif text == "❓ Помощь":
-                await send_message(chat_id, "Напишите свой вопрос, и мы ответим как можно скорее.")
             else:
                 await send_message(chat_id, f"Вы написали: {text}")
 
@@ -55,13 +34,14 @@ async def telegram_webhook(request: Request):
         callback = data["callback_query"]
         chat_id = callback["message"]["chat"]["id"]
         data_value = callback.get("data", "")
+        print(f"CALLBACK: {data_value}")
 
         if data_value == "phones":
-            await send_message(chat_id, "📱 В разделе смартфонов скоро появятся крутые модели!")
+            await send_message(chat_id, "Раздел смартфонов")
         elif data_value == "laptops":
-            await send_message(chat_id, "💻 Раздел ноутбуков в разработке.")
+            await send_message(chat_id, "Раздел ноутбуков")
         elif data_value == "components":
-            await send_message(chat_id, "🖥 Здесь будут комплектующие для сборки ПК.")
+            await send_message(chat_id, "Раздел комплектующих")
 
     return {"ok": True}
 
@@ -69,8 +49,7 @@ async def send_message(chat_id: int, text: str, reply_markup=None):
     payload = {
         "chat_id": chat_id,
         "text": text,
-        "reply_markup": reply_markup,
-        "parse_mode": "HTML"
+        "reply_markup": reply_markup
     }
     async with httpx.AsyncClient() as client:
         await client.post(f"{TELEGRAM_API_URL}/sendMessage", json=payload)
@@ -79,12 +58,11 @@ async def send_main_menu(chat_id: int):
     reply_markup = {
         "keyboard": [
             [{"text": "📦 Каталог"}],
-            [{"text": "ℹ️ О нас"}, {"text": "📞 Контакты"}],
-            [{"text": "❓ Помощь"}]
+            [{"text": "ℹ️ О нас"}]
         ],
         "resize_keyboard": True
     }
-    welcome_text = "<b>Добро пожаловать в ETRONICS STORE! 🛍</b>\nВыберите интересующий вас раздел ниже 👇"
+    welcome_text = "Добро пожаловать в ETRONICS STORE! Выберите раздел:"
     await send_message(chat_id, welcome_text, reply_markup)
 
 async def send_catalog_menu(chat_id: int):
@@ -92,7 +70,7 @@ async def send_catalog_menu(chat_id: int):
         "inline_keyboard": [
             [{"text": "📱 Смартфоны", "callback_data": "phones"}],
             [{"text": "💻 Ноутбуки", "callback_data": "laptops"}],
-            [{"text": "🖥 Комплектующие", "callback_data": "components"}],
+            [{"text": "🖥 Комплектующие", "callback_data": "components"}]
         ]
     }
-    await send_message(chat_id, "Выберите категорию товара 👇", reply_markup)
+    await send_message(chat_id, "Выберите категорию:", reply_markup)
