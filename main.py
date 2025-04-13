@@ -31,6 +31,9 @@ async def telegram_webhook(request: Request):
                 await send_main_menu(chat_id)
             elif text in ["/menu", "📋 Меню"]:
                 user_states[chat_id] = "menu"
+                dialog_history.pop(chat_id, None)
+                await send_main_menu(chat_id)
+                user_states[chat_id] = "menu"
                 await send_main_menu(chat_id)
             elif text in ["ℹ️ О нас", "О нас"]:
                 about_text = (
@@ -62,6 +65,8 @@ async def telegram_webhook(request: Request):
                 dialog_history[chat_id].append({"role": "user", "content": text})
                 gpt_response = await ask_gpt(dialog_history[chat_id])
                 dialog_history[chat_id].append({"role": "assistant", "content": gpt_response})
+                if len(dialog_history[chat_id]) > 20:
+                    dialog_history[chat_id] = dialog_history[chat_id][-20:]
                 await send_message(chat_id, gpt_response, {
                     "keyboard": [[{"text": "📋 Меню"}]],
                     "resize_keyboard": True
