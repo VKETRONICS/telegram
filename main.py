@@ -47,6 +47,15 @@ async def telegram_webhook(request: Request):
         if chat_id and text:
             if text in ["/start", "/menu", "📋 Меню"]:
             user_states[chat_id] = "menu"
+            await delete_previous_messages(chat_id)
+            inline_markup = {
+                "inline_keyboard": [
+                    [{"text": "📦 Каталог", "callback_data": "catalog"}, {"text": "ℹ️ О нас", "callback_data": "about"}],
+                    [{"text": "📞 Контакты", "callback_data": "contacts"}, {"text": "❓ Помощь", "callback_data": "help"}],
+                    [{"text": "🧹 Очистить", "callback_data": "clear"}]
+                ]
+            }
+            await send_message(chat_id, "📋 Главное меню ETRONICS STORE:", inline_markup)
                 user_states[chat_id] = "menu"
                 dialog_history.pop(chat_id, None)
                 await delete_previous_messages(chat_id)
