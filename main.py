@@ -13,6 +13,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
 user_states = {}
+dialog_history = {}
 
 @app.post("/webhook")
 async def telegram_webhook(request: Request):
@@ -57,6 +58,14 @@ async def telegram_webhook(request: Request):
                 user_states[chat_id] = "gpt"
                 await send_message(chat_id, "🧠 Я готов помочь! Напишите свой вопрос. Для возврата в меню напишите /menu")
             elif user_states.get(chat_id) == "gpt":
+                dialog_history.setdefault(chat_id, [])
+                dialog_history[chat_id].append({"role": "user", "content": text})
+                gpt_response = await ask_gpt(dialog_history[chat_id])
+                dialog_history[chat_id].append({"role": "assistant", "content": gpt_response})
+                await send_message(chat_id, gpt_response, {
+                    "keyboard": [[{"text": "📋 Меню"}]],
+                    "resize_keyboard": True
+                })
                 gpt_response = await ask_gpt(text)
                 await send_message(chat_id, gpt_response, {
         "keyboard": [[{"text": "📋 Меню"}]],
@@ -80,12 +89,12 @@ async def telegram_webhook(request: Request):
 
     return {"ok": True}
 
-async def ask_gpt(question: str) -> str:
+async def ask_gpt(messages: list) -> str:
     try:
         client = openai.OpenAI(api_key=OPENAI_API_KEY)
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": question}],
+            messages=messages,
             max_tokens=300,
             temperature=0.7
         )
