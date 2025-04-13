@@ -35,8 +35,7 @@ async def telegram_webhook(request: Request):
             elif text == "ℹ️ О нас":
                 await send_message(chat_id, "🔧 ETRONICS — ваш проводник в мире электроники! 💻📱🖥")
             elif text == "📞 Контакты":
-                await send_message(chat_id, "📧 support@etronics.pro
-📱 @etronics_support")
+                await send_message(chat_id, "📧 support@etronics.pro\n📱 @etronics_support")
             elif text == "❓ Помощь":
                 user_states[chat_id] = "gpt"
                 dialog_history[chat_id] = []
@@ -85,7 +84,7 @@ async def telegram_webhook(request: Request):
         elif data_value == "catalog":
             await send_catalog_menu(chat_id)
 
-    return {"ok": True"}
+    return {"ok": True}
 
 async def send_main_menu(chat_id: int):
     reply_markup = {
@@ -96,9 +95,7 @@ async def send_main_menu(chat_id: int):
         ],
         "resize_keyboard": True
     }
-    await send_message(chat_id, "🎉 Добро пожаловать в ETRONICS STORE!
-
-Выберите интересующий вас раздел ниже 👇", reply_markup)
+    await send_message(chat_id, "🎉 Добро пожаловать в ETRONICS STORE!\n\nВыберите интересующий вас раздел ниже 👇", reply_markup)
 
 async def send_catalog_menu(chat_id: int):
     reply_markup = {
