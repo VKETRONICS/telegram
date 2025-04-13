@@ -28,7 +28,7 @@ async def telegram_webhook(request: Request):
             if text == "/start":
                 user_states[chat_id] = "menu"
                 await send_main_menu(chat_id)
-            elif text == "/menu":
+            elif text in ["/menu", "📋 Меню"]:
                 user_states[chat_id] = "menu"
                 await send_main_menu(chat_id)
             elif text in ["ℹ️ О нас", "О нас"]:
@@ -58,7 +58,10 @@ async def telegram_webhook(request: Request):
                 await send_message(chat_id, "🧠 Я готов помочь! Напишите свой вопрос. Для возврата в меню напишите /menu")
             elif user_states.get(chat_id) == "gpt":
                 gpt_response = await ask_gpt(text)
-                await send_message(chat_id, gpt_response)
+                await send_message(chat_id, gpt_response, {
+        "keyboard": [[{"text": "📋 Меню"}]],
+        "resize_keyboard": True
+    })
             else:
                 await send_message(chat_id, "Пожалуйста, выберите пункт меню или нажмите /start")
 
