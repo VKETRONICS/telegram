@@ -133,7 +133,21 @@ async def telegram_webhook(request: Request):
         elif data_value == "ask":
             await send_message(chat_id, "🧠 Напишите свой вопрос, и я постараюсь помочь!")
         elif data_value == "catalog":
-            await send_catalog_menu(chat_id)
+            catalog_markup = {
+                "inline_keyboard": [
+                    [{"text": "💻 Ноутбуки", "callback_data": "laptops"}],
+                    [{"text": "📱 Смартфоны", "callback_data": "phones"}],
+                    [{"text": "🖥 Комплектующие", "callback_data": "components"}]
+                ]
+            }
+            async with httpx.AsyncClient() as client:
+                response = await client.post(f"{TELEGRAM_API_URL}/editMessageText", json={
+                    "chat_id": chat_id,
+                    "message_id": callback["message"]["message_id"],
+                    "text": "📦 Выберите категорию товара:",
+                    "reply_markup": catalog_markup
+                })
+                print(f"ВОЗВРАТ В КАТАЛОГ: {response.status_code} | {response.text}")
         elif data_value == "laptops":
             sub_markup = {
                 "inline_keyboard": [
