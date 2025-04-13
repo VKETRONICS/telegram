@@ -49,12 +49,42 @@ async def telegram_webhook(request: Request):
                 user_states[chat_id] = "menu"
                 dialog_history.pop(chat_id, None)
                 await delete_previous_messages(chat_id)
-                await send_main_menu(chat_id)
+                await delete_previous_messages(chat_id)
+                reply_markup = {
+                    "keyboard": [
+                        [{"text": "📦 Каталог"}],
+                        [{"text": "ℹ️ О нас"}, {"text": "📞 Контакты"}],
+                        [{"text": "❓ Помощь"}]
+                    ],
+                    "resize_keyboard": True
+                }
+                inline_markup = {
+                    "inline_keyboard": [
+                        [{"text": "🧹 Очистить чат", "callback_data": "clear"}]
+                    ]
+                }
+                await send_message(chat_id, "Добро пожаловать в ETRONICS STORE! Выберите раздел:", reply_markup)
+                await send_message(chat_id, "Если хотите — можете очистить мой предыдущий диалог 👇", inline_markup)
             elif text in ["/menu", "📋 Меню"]:
                 user_states[chat_id] = "menu"
                 dialog_history.pop(chat_id, None)
                 await delete_previous_messages(chat_id)
-                await send_main_menu(chat_id)
+                await delete_previous_messages(chat_id)
+                reply_markup = {
+                    "keyboard": [
+                        [{"text": "📦 Каталог"}],
+                        [{"text": "ℹ️ О нас"}, {"text": "📞 Контакты"}],
+                        [{"text": "❓ Помощь"}]
+                    ],
+                    "resize_keyboard": True
+                }
+                inline_markup = {
+                    "inline_keyboard": [
+                        [{"text": "🧹 Очистить чат", "callback_data": "clear"}]
+                    ]
+                }
+                await send_message(chat_id, "Добро пожаловать в ETRONICS STORE! Выберите раздел:", reply_markup)
+                await send_message(chat_id, "Если хотите — можете очистить мой предыдущий диалог 👇", inline_markup)
             elif text == "/bot":
                 reply_markup = {
                     "inline_keyboard": [
@@ -119,6 +149,10 @@ async def telegram_webhook(request: Request):
         data_value = callback.get("data", "")
         print(f"CALLBACK: {data_value}")
         if data_value == "ask":
+            await send_message(chat_id, "🧠 Напишите свой вопрос, и я постараюсь помочь!")
+        elif data_value == "clear":
+            await delete_previous_messages(chat_id)
+            await send_message(chat_id, "✅ Чат очищен! Вы можете вручную удалить и свои сообщения 😊")
             await send_message(chat_id, "🧠 Напишите свой вопрос, и я постараюсь помочь!")
 
     return {"ok": True}
