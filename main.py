@@ -2,13 +2,17 @@ from fastapi import FastAPI, Request
 import httpx
 import os
 from dotenv import load_dotenv
+import openai
 
 load_dotenv()
 
 app = FastAPI()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
+
+user_states = {}
 
 @app.post("/webhook")
 async def telegram_webhook(request: Request):
@@ -22,6 +26,10 @@ async def telegram_webhook(request: Request):
 
         if chat_id and text:
             if text == "/start":
+                user_states[chat_id] = "menu"
+                await send_main_menu(chat_id)
+            elif text == "/menu":
+                user_states[chat_id] = "menu"
                 await send_main_menu(chat_id)
             elif text in ["ℹ️ О нас", "О нас"]:
                 about_text = (
@@ -41,14 +49,18 @@ async def telegram_webhook(request: Request):
                     "📲 Свяжитесь с нами: support@etronics.pro"
                 )
                 await send_message(chat_id, about_text)
-            elif text == "📦 Каталог":
-                await send_catalog_menu(chat_id)
             elif text == "📞 Контакты":
                 await send_message(chat_id, "📧 support@etronics.pro\n📱 @etronics_support")
+            elif text == "📦 Каталог":
+                await send_catalog_menu(chat_id)
             elif text == "❓ Помощь":
-                await send_message(chat_id, "Задайте вопрос, и мы с радостью ответим.")
+                user_states[chat_id] = "gpt"
+                await send_message(chat_id, "🧠 Я готов помочь! Напишите свой вопрос. Для возврата в меню напишите /menu")
+            elif user_states.get(chat_id) == "gpt":
+                gpt_response = await ask_gpt(text)
+                await send_message(chat_id, gpt_response)
             else:
-                await send_message(chat_id, f"Вы написали: {text}")
+                await send_message(chat_id, "Пожалуйста, выберите пункт меню или нажмите /start")
 
     elif "callback_query" in data:
         callback = data["callback_query"]
@@ -64,6 +76,20 @@ async def telegram_webhook(request: Request):
             await send_message(chat_id, "🖥 Комплектующие появятся совсем скоро.")
 
     return {"ok": True}
+
+async def ask_gpt(question: str) -> str:
+    try:
+        openai.api_key = OPENAI_API_KEY
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": question}],
+            max_tokens=300,
+            temperature=0.7
+        )
+        return response.choices[0].message["content"].strip()
+    except Exception as e:
+        print(f"GPT ERROR: {e}")
+        return "Произошла ошибка при получении ответа от ИИ 😔"
 
 async def send_message(chat_id: int, text: str, reply_markup=None):
     payload = {
