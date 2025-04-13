@@ -20,12 +20,14 @@ async def telegram_webhook(request: Request):
     if chat_id and text:
         if text == "/start":
             await send_main_menu(chat_id)
-        elif text == "О нас":
-            await send_message(chat_id, "Мы команда ETRONICS — собираем ПК, ноутбуки и делаем умных ботов 💻🤖")
-        elif text == "Помощь":
-            await send_message(chat_id, "Напишите /start, чтобы открыть меню. Или задайте свой вопрос.")
-        elif text == "Связаться":
-            await send_message(chat_id, "Вы можете написать нам на почту: support@etronics.ru")
+        elif text == "📦 Каталог":
+            await send_message(chat_id, "Каталог скоро будет доступен. Следите за обновлениями 🛒")
+        elif text == "ℹ️ О нас":
+            await send_message(chat_id, "ETRONICS — это современный магазин техники: ноутбуки, ПК, аксессуары и умные решения для дома и офиса.")
+        elif text == "📞 Контакты":
+            await send_message(chat_id, "📧 Почта: support@etronics.ru\n📱 Telegram: @etronics_support")
+        elif text == "❓ Помощь":
+            await send_message(chat_id, "Напишите свой вопрос, и мы постараемся ответить как можно быстрее.")
         else:
             await send_message(chat_id, f"Вы написали: {text}")
     return {"ok": True}
@@ -35,6 +37,7 @@ async def send_message(chat_id: int, text: str, reply_markup=None):
         "chat_id": chat_id,
         "text": text,
         "reply_markup": reply_markup,
+        "parse_mode": "HTML"
     }
     async with httpx.AsyncClient() as client:
         await client.post(
@@ -45,11 +48,15 @@ async def send_message(chat_id: int, text: str, reply_markup=None):
 async def send_main_menu(chat_id: int):
     reply_markup = {
         "keyboard": [
-            [{"text": "О нас"}],
-            [{"text": "Помощь"}],
-            [{"text": "Связаться"}]
+            [{"text": "📦 Каталог"}],
+            [{"text": "ℹ️ О нас"}, {"text": "📞 Контакты"}],
+            [{"text": "❓ Помощь"}]
         ],
         "resize_keyboard": True,
         "one_time_keyboard": False
     }
-    await send_message(chat_id, "Выберите опцию из меню ниже 👇", reply_markup)
+    welcome_text = (
+        "<b>Добро пожаловать в ETRONICS STORE! 🛍</b>\n"
+        "Выберите интересующий вас раздел ниже 👇"
+    )
+    await send_message(chat_id, welcome_text, reply_markup)
