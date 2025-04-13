@@ -45,7 +45,8 @@ async def telegram_webhook(request: Request):
         print(f"ПОЛУЧЕНО СООБЩЕНИЕ: {text}")
 
         if chat_id and text:
-            if text in ["/start", "/menu", "📋 Меню"] and user_states.get(chat_id) != "gpt":
+            if text in ["/start", "/menu", "📋 Меню"]:
+            user_states[chat_id] = "menu"
                 user_states[chat_id] = "menu"
                 dialog_history.pop(chat_id, None)
                 await delete_previous_messages(chat_id)
