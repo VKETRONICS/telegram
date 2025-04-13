@@ -109,7 +109,7 @@ async def send_main_menu(chat_id: int):
         ],
         "resize_keyboard": True
     }
-                    [{"text": "📋 Весь список (все размеры)", "callback_data": "work_full_list"}],
+                    {"text": "📋 Весь список (все размеры)", "callback_data": "work_full_list"},
 
 Выберите интересующий вас раздел ниже 👇"
     await send_message(chat_id, welcome_text, reply_markup)
