@@ -116,10 +116,23 @@ async def telegram_webhook(request: Request):
             else:
                 await send_message(chat_id, "Пожалуйста, выберите пункт меню или нажмите /start")
 
+    
     elif "callback_query" in data:
         callback = data["callback_query"]
         chat_id = callback["message"]["chat"]["id"]
         data_value = callback.get("data", "")
+        print(f"CALLBACK: {data_value}")
+        if data_value not in ["phones", "laptops", "components", "ask", "catalog", "laptop_gaming", "laptop_work"]:
+            print("⚠️ НЕОЖИДАННОЕ ЗНАЧЕНИЕ callback_data:", data_value)
+
+        if data_value == "phones":
+            await send_message(chat_id, "📱 Смартфоны скоро будут доступны.")
+        elif data_value == "components":
+            await send_message(chat_id, "🖥 Комплектующие появятся совсем скоро.")
+        elif data_value == "ask":
+            await send_message(chat_id, "🧠 Напишите свой вопрос, и я постараюсь помочь!")
+        elif data_value == "catalog":
+            await send_catalog_menu(chat_id)
         elif data_value == "laptops":
             sub_markup = {
                 "inline_keyboard": [
@@ -134,12 +147,6 @@ async def telegram_webhook(request: Request):
                     "reply_markup": sub_markup
                 }})
                 print(f"ОТПРАВКА ПОДМЕНЮ НОУТБУКОВ: {response.status_code} | {response.text}")
-
-        print(f"CALLBACK: {data_value}")
-        if data_value not in ["phones", "laptops", "components", "ask", "catalog", "laptop_gaming", "laptop_work"]:
-            print("⚠️ НЕОЖИДАННОЕ ЗНАЧЕНИЕ callback_data:", data_value)
-        if data_value == "ask":
-            await send_message(chat_id, "🧠 Напишите свой вопрос, и я постараюсь помочь!")
 
     return {"ok": True}
 
