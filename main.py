@@ -45,7 +45,7 @@ async def telegram_webhook(request: Request):
         print(f"ПОЛУЧЕНО СООБЩЕНИЕ: {text}")
 
         if chat_id and text:
-            if text == "/start":
+            if text in ["/start", "/menu", "📋 Меню"] and user_states.get(chat_id) != "gpt":
                 user_states[chat_id] = "menu"
                 dialog_history.pop(chat_id, None)
                 await delete_previous_messages(chat_id)
@@ -65,7 +65,7 @@ async def telegram_webhook(request: Request):
                 }
                 await send_message(chat_id, "Добро пожаловать в ETRONICS STORE! Выберите раздел:", reply_markup)
                 await send_message(chat_id, "Если хотите — можете очистить мой предыдущий диалог 👇", inline_markup)
-            elif text in ["/menu", "📋 Меню"]:
+            # удалено как объединено с /start
                 user_states[chat_id] = "menu"
                 dialog_history.pop(chat_id, None)
                 await delete_previous_messages(chat_id)
@@ -153,6 +153,14 @@ async def telegram_webhook(request: Request):
         elif data_value == "clear":
             await delete_previous_messages(chat_id)
             await send_message(chat_id, "✅ Чат очищен! Вы можете вручную удалить и свои сообщения 😊")
+            inline_markup = {
+                "inline_keyboard": [
+                    [{"text": "📦 Каталог", "callback_data": "catalog"}, {"text": "ℹ️ О нас", "callback_data": "about"}],
+                    [{"text": "📞 Контакты", "callback_data": "contacts"}, {"text": "❓ Помощь", "callback_data": "help"}],
+                    [{"text": "🧹 Очистить", "callback_data": "clear"}]
+                ]
+            }
+            await send_message(chat_id, "📋 Главное меню ETRONICS STORE:", inline_markup)
         elif data_value == "catalog":
             await send_catalog_menu(chat_id)
         elif data_value == "about":
@@ -170,6 +178,14 @@ async def telegram_webhook(request: Request):
         elif data_value == "clear":
             await delete_previous_messages(chat_id)
             await send_message(chat_id, "✅ Чат очищен! Вы можете вручную удалить и свои сообщения 😊")
+            inline_markup = {
+                "inline_keyboard": [
+                    [{"text": "📦 Каталог", "callback_data": "catalog"}, {"text": "ℹ️ О нас", "callback_data": "about"}],
+                    [{"text": "📞 Контакты", "callback_data": "contacts"}, {"text": "❓ Помощь", "callback_data": "help"}],
+                    [{"text": "🧹 Очистить", "callback_data": "clear"}]
+                ]
+            }
+            await send_message(chat_id, "📋 Главное меню ETRONICS STORE:", inline_markup)
             await send_message(chat_id, "🧠 Напишите свой вопрос, и я постараюсь помочь!")
 
     return {"ok": True}
