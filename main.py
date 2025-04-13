@@ -3,6 +3,7 @@ import httpx
 import os
 from dotenv import load_dotenv
 import openai
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 load_dotenv()
 
@@ -13,9 +14,25 @@ scheduler.start()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
-
 user_states = {}
 dialog_history = {}
+
+@app.on_event("startup")
+async def schedule_daily_greeting():
+    from pytz import timezone
+    msk = timezone("Europe/Moscow")
+    scheduler.add_job(send_daily_greeting, "cron", hour=10, minute=0, timezone=msk)
+
+async def send_daily_greeting():
+    chat_id = os.getenv("GROUP_CHAT_ID")
+    if chat_id:
+        reply_markup = {
+            "inline_keyboard": [
+                [{"text": "🔧 Помощь с выбором", "callback_data": "ask"}]
+            ]
+        }
+        text = "Доброе утро, друзья! ☀️\nГотов помочь с подбором техники, ответить на вопросы или подсказать с выбором 💻"
+        await send_message(int(chat_id), text, reply_markup)
 
 @app.post("/webhook")
 async def telegram_webhook(request: Request):
@@ -36,6 +53,13 @@ async def telegram_webhook(request: Request):
                 user_states[chat_id] = "menu"
                 dialog_history.pop(chat_id, None)
                 await send_main_menu(chat_id)
+            elif text == "/bot":
+                reply_markup = {
+                    "inline_keyboard": [
+                        [{"text": "🔧 Помощь с выбором", "callback_data": "ask"}]
+                    ]
+                }
+                await send_message(chat_id, "Нажмите кнопку ниже, чтобы задать вопрос:", reply_markup)
             elif text in ["ℹ️ О нас", "О нас"]:
                 about_text = (
                     "🔧 ETRONICS — ваш проводник в мире электроники!\n\n"
@@ -87,20 +111,6 @@ async def telegram_webhook(request: Request):
             else:
                 await send_message(chat_id, "Пожалуйста, выберите пункт меню или нажмите /start")
 
-    elif "callback_query" in data:
-        callback = data["callback_query"]
-        chat_id = callback["message"]["chat"]["id"]
-        data_value = callback.get("data", "")
-        print(f"CALLBACK: {data_value}")
-
-        if data_value == "phones":
-            await send_message(chat_id, "📱 Смартфоны скоро будут доступны.")
-        elif data_value == "laptops":
-            await send_message(chat_id, "💻 Раздел ноутбуков в разработке.")
-        elif data_value == "components":
-            await send_message(chat_id, "🖥 Комплектующие появятся совсем скоро.")
-
-    
     elif "callback_query" in data:
         callback = data["callback_query"]
         chat_id = callback["message"]["chat"]["id"]
@@ -161,19 +171,3 @@ async def send_catalog_menu(chat_id: int):
         ]
     }
     await send_message(chat_id, "Выберите категорию товара:", reply_markup)
-@app.on_event("startup")
-async def schedule_daily_greeting():
-    from pytz import timezone
-    msk = timezone("Europe/Moscow")
-    scheduler.add_job(send_daily_greeting, "cron", hour=10, minute=0, timezone=msk)
-
-async def send_daily_greeting():
-    chat_id = os.getenv("GROUP_CHAT_ID")
-    if chat_id:
-        reply_markup = {
-            "inline_keyboard": [
-                [{"text": "🔧 Помощь с выбором", "callback_data": "ask"}]
-            ]
-        }
-        text = "Доброе утро, друзья! ☀️\nГотов помочь с подбором техники, ответить на вопросы или подсказать с выбором 💻"
-        await send_message(int(chat_id), text, reply_markup)
