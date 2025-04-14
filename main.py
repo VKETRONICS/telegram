@@ -50,6 +50,7 @@ elif text == "ℹ️ О нас":
         "📲 Свяжитесь с нами:"
     )
     await send_message(chat_id, about_text)
+
             elif text == "📞 Контакты":
                 await send_message(chat_id, "📧 support@etronics.pro\n📱 @etronics_support")
             elif text == "❓ Помощь":
