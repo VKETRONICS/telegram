@@ -163,3 +163,23 @@ async def send_catalog_menu(chat_id: int):
         ]
     }
     await send_message(chat_id, catalog_text, reply_markup)
+
+
+async def send_message(chat_id: int, text: str, reply_markup=None):
+    payload = {
+        "chat_id": chat_id,
+        "text": text,
+        "parse_mode": "HTML"
+    }
+    if reply_markup is not None:
+        payload["reply_markup"] = reply_markup
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(f"{TELEGRAM_API_URL}/sendMessage", json=payload)
+            print(f"ОТПРАВКА СООБЩЕНИЯ: {response.status_code} | {response.text}")
+            if response.status_code == 200:
+                message_id = response.json()["result"]["message_id"]
+                last_bot_messages[chat_id] = message_id
+    except Exception as e:
+        print(f"ОШИБКА ПРИ ОТПРАВКЕ СООБЩЕНИЯ: {e}")
