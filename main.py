@@ -33,47 +33,27 @@ async def telegram_webhook(request: Request):
             elif text == "📦 Каталог":
                 await send_catalog_menu(chat_id)
             elif text == "ℹ️ О нас":
-    about_text = (
-        "🔧 ETRONICS - ваш проводник в мире электроники!
-
-"
-        "💻 Мы собираем компьютеры любой конфигурации на заказ:
-"
-        "• 🎮 Игровые сборки
-"
-        "• 🏢 ПК для учебы, офиса и работы
-"
-        "• 💼 Станции для профессионалов и творчества
-
-"
-        "🖥 Всегда в наличии:
-"
-        "• 💻 Ноутбуки - от бюджетных до премиум
-"
-        "• 🎧 Аксессуары - мыши, клавиатуры, наушники, SSD и другое
-
-"
-        "📦 Почему выбирают нас:
-"
-        "• 🧑‍💻 Индивидуальный подход
-"
-        "• ✅ Качество комплектующих
-"
-        "• 🚚 Быстрая доставка
-"
-        "• 💬 Настройка оборудования, поддержка и консультации
-
-"
-        "📲 Свяжитесь с нами:
-"
-        "📧 support@etronics.pro
-"
-        "📱 @etronics_support"
-    )
-    await send_message(chat_id, about_text)
+                about_text = (
+                    "🔧 ETRONICS - ваш проводник в мире электроники!\n\n"
+                    "💻 Мы собираем компьютеры любой конфигурации на заказ:\n"
+                    "• 🎮 Игровые сборки\n"
+                    "• 🏢 ПК для учебы, офиса и работы\n"
+                    "• 💼 Станции для профессионалов и творчества\n\n"
+                    "🖥 Всегда в наличии:\n"
+                    "• 💻 Ноутбуки - от бюджетных до премиум\n"
+                    "• 🎧 Аксессуары - мыши, клавиатуры, наушники, SSD и другое\n\n"
+                    "📦 Почему выбирают нас:\n"
+                    "• 🧑‍💻 Индивидуальный подход\n"
+                    "• ✅ Качество комплектующих\n"
+                    "• 🚚 Быстрая доставка\n"
+                    "• 💬 Настройка оборудования, поддержка и консультации\n\n"
+                    "📲 Свяжитесь с нами:\n"
+                    "📧 support@etronics.pro\n"
+                    "📱 @etronics_support"
+                )
+                await send_message(chat_id, about_text)
             elif text == "📞 Контакты":
-                await send_message(chat_id, "📧 support@etronics.pro
-📱 @etronics_support")
+                await send_message(chat_id, "📧 support@etronics.pro\n📱 @etronics_support")
             elif text == "❓ Помощь":
                 user_states[chat_id] = "gpt"
                 dialog_history[chat_id] = []
@@ -151,9 +131,7 @@ async def send_main_menu(chat_id: int):
         ],
         "resize_keyboard": True
     }
-    await send_message(chat_id, "🎉 Добро пожаловать в ETRONICS STORE!
-
-Выберите интересующий вас раздел ниже 👇", reply_markup)
+    await send_message(chat_id, "🎉 Добро пожаловать в ETRONICS STORE!\n\nВыберите интересующий вас раздел ниже 👇", reply_markup)
 
 async def send_catalog_menu(chat_id: int):
     reply_markup = {
