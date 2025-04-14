@@ -58,18 +58,17 @@ async def telegram_webhook(request: Request):
                     "resize_keyboard": True
                 })
             elif text == "📞 КОНТАКТЫ":
-                text = (
+                contact_text = (
                     "📞 НАШИ КОНТАКТЫ:\n\n"
-                    "📧 support@etronics.pro\n"
-                    "📱 +7 962 915 5444"
+                    "🔗 VK: https://vk.com/etronics_pro\n"
+                    "📧 Email: support@etronics.pro\n"
+                    "📱 Телефон: +7 962 915 5444\n"
+                    "🌐 Сайт: www.etronics.pro"
                 )
-                inline_markup = {
-                    "inline_keyboard": [
-                        [{"text": "🔗 МЫ В VK", "url": "https://vk.com/etronics_pro"}],
-                        [{"text": "📧 НАПИСАТЬ НА ПОЧТУ", "url": "mailto:support@etronics.pro"}]
-                    ]
-                }
-                await send_message(chat_id, text, inline_markup)
+                await send_message(chat_id, contact_text, {
+                    "keyboard": [[{"text": "📋 МЕНЮ"}]],
+                    "resize_keyboard": True
+                })
             elif text == "❓ ПОМОЩЬ":
                 user_states[chat_id] = "gpt"
                 dialog_history[chat_id] = []
@@ -98,18 +97,17 @@ async def telegram_webhook(request: Request):
         print(f"CALLBACK: {data_value}")
 
         if data_value == "contacts":
-            text = (
+            contact_text = (
                 "📞 НАШИ КОНТАКТЫ:\n\n"
-                "📧 support@etronics.pro\n"
-                "📱 +7 962 915 5444"
+                "🔗 VK: https://vk.com/etronics_pro\n"
+                "📧 Email: support@etronics.pro\n"
+                "📱 Телефон: +7 962 915 5444\n"
+                "🌐 Сайт: www.etronics.pro"
             )
-            inline_markup = {
-                "inline_keyboard": [
-                    [{"text": "🔗 МЫ В VK", "url": "https://vk.com/etronics_pro"}],
-                    [{"text": "📧 НАПИСАТЬ НА ПОЧТУ", "url": "mailto:support@etronics.pro"}]
-                ]
-            }
-            await send_message(chat_id, text, inline_markup)
+            await send_message(chat_id, contact_text, {
+                "keyboard": [[{"text": "📋 МЕНЮ"}]],
+                "resize_keyboard": True
+            })
         elif data_value == "main_menu":
             await clear_chat(chat_id, message_id + 1)
             await send_main_menu(chat_id)
