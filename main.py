@@ -59,11 +59,10 @@ async def telegram_webhook(request: Request):
                 })
             elif text == "📞 КОНТАКТЫ":
                 contact_text = (
-                    "📞 НАШИ КОНТАКТЫ:\n\n"
                     "🔗 VK: https://vk.com/etronics_pro\n"
                     "📧 Email: support@etronics.pro\n"
                     "📱 Телефон: +7 962 915 5444\n"
-                    "🌐 Сайт: www.etronics.pro"
+                    "🌐 Сайт: https://www.etronics.pro"
                 )
                 await send_message(chat_id, contact_text, {
                     "keyboard": [[{"text": "📋 МЕНЮ"}]],
@@ -98,11 +97,10 @@ async def telegram_webhook(request: Request):
 
         if data_value == "contacts":
             contact_text = (
-                "📞 НАШИ КОНТАКТЫ:\n\n"
                 "🔗 VK: https://vk.com/etronics_pro\n"
                 "📧 Email: support@etronics.pro\n"
                 "📱 Телефон: +7 962 915 5444\n"
-                "🌐 Сайт: www.etronics.pro"
+                "🌐 Сайт: https://www.etronics.pro"
             )
             await send_message(chat_id, contact_text, {
                 "keyboard": [[{"text": "📋 МЕНЮ"}]],
