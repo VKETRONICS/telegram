@@ -46,12 +46,14 @@ async def telegram_webhook(request: Request):
                     "• 🧑‍💻 Индивидуальный подход\n"
                     "• ✅ Качество комплектующих\n"
                     "• 🚚 Быстрая доставка\n"
-                    "• 💬 Настройка оборудования, поддержка и консультации\n\n"
-                    "📲 Свяжитесь с нами:\n"
-                    "📧 support@etronics.pro\n"
-                    "📱 @etronics_support"
+                    "• 💬 Настройка оборудования, поддержка и консультации"
                 )
-                await send_message(chat_id, about_text)
+                reply_markup = {
+                    "inline_keyboard": [
+                        [{"text": "📲 Свяжитесь с нами", "callback_data": "contacts"}]
+                    ]
+                }
+                await send_message(chat_id, about_text, reply_markup)
             elif text == "📞 Контакты":
                 await send_message(chat_id, "📧 support@etronics.pro\n📱 @etronics_support")
             elif text == "❓ Помощь":
@@ -119,6 +121,9 @@ async def telegram_webhook(request: Request):
                 ]
             }
             await send_catalog_update(chat_id, message_id, "Выберите категорию товара:", reply_markup)
+
+        elif data_value == "contacts":
+            await send_message(chat_id, "📧 support@etronics.pro\n📱 @etronics_support")
 
     return {"ok": True}
 
