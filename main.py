@@ -30,7 +30,10 @@ async def telegram_webhook(request: Request):
             if text in ["/start", "/menu", "📋 Меню"]:
                 user_states[chat_id] = "menu"
                 dialog_history.pop(chat_id, None)
-                await edit_last_message_to_main_menu(chat_id)
+                if chat_id not in last_bot_messages:
+                    await send_main_menu(chat_id)
+                else:
+                    await edit_last_message_to_main_menu(chat_id)
 
             elif text == "📦 Каталог":
                 await send_catalog_menu(chat_id)
@@ -146,6 +149,40 @@ async def send_main_menu(chat_id: int):
     await send_message(chat_id, "🎉 Добро пожаловать в ETRONICS STORE!\n\nВыберите интересующий вас раздел ниже 👇", reply_markup)
 
 
+async def edit_last_message_to_main_menu(chat_id: int):
+    message_id = last_bot_messages.get(chat_id)
+    reply_markup = {
+        "keyboard": [
+            [{"text": "📦 Каталог"}],
+            [{"text": "ℹ️ О нас"}, {"text": "📞 Контакты"}],
+            [{"text": "❓ Помощь"}]
+        ],
+        "resize_keyboard": True
+    }
+
+    if not message_id:
+        await send_main_menu(chat_id)
+        return
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{TELEGRAM_API_URL}/editMessageText",
+                json={
+                    "chat_id": chat_id,
+                    "message_id": message_id,
+                    "text": "🎉 Добро пожаловать в ETRONICS STORE!\n\nВыберите интересующий вас раздел ниже 👇",
+                    "reply_markup": reply_markup
+                }
+            )
+            print(f"РЕДАКТИРОВАНИЕ МЕНЮ: {response.status_code} | {response.text}")
+            if response.status_code != 200:
+                raise Exception("Нельзя редактировать, пробуем удалить")
+    except:
+        await delete_message(chat_id, message_id)
+        await send_main_menu(chat_id)
+
+
 async def send_catalog_menu(chat_id: int):
     catalog_text = (
         "📦 <b>Категории товаров:</b>\n"
@@ -183,3 +220,15 @@ async def send_message(chat_id: int, text: str, reply_markup=None):
                 last_bot_messages[chat_id] = message_id
     except Exception as e:
         print(f"ОШИБКА ПРИ ОТПРАВКЕ СООБЩЕНИЯ: {e}")
+
+
+async def delete_message(chat_id: int, message_id: int):
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{TELEGRAM_API_URL}/deleteMessage",
+                json={"chat_id": chat_id, "message_id": message_id}
+            )
+            print(f"УДАЛЕНИЕ СООБЩЕНИЯ: {response.status_code} | {response.text}")
+    except Exception as e:
+        print(f"ОШИБКА ПРИ УДАЛЕНИИ СООБЩЕНИЯ: {e}")
