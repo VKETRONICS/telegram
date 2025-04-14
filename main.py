@@ -146,95 +146,20 @@ async def send_main_menu(chat_id: int):
     await send_message(chat_id, "🎉 Добро пожаловать в ETRONICS STORE!\n\nВыберите интересующий вас раздел ниже 👇", reply_markup)
 
 
-async def send_message(chat_id: int, text: str, reply_markup=None):
-    payload = {
-        "chat_id": chat_id,
-        "text": text
-    }
-    if reply_markup is not None:
-        payload["reply_markup"] = reply_markup
-
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(f"{TELEGRAM_API_URL}/sendMessage", json=payload)
-            print(f"ОТПРАВКА СООБЩЕНИЯ: {response.status_code} | {response.text}")
-            if response.status_code == 200:
-                message_id = response.json()["result"]["message_id"]
-                last_bot_messages[chat_id] = message_id
-    except Exception as e:
-        print(f"ОШИБКА ПРИ ОТПРАВКЕ СООБЩЕНИЯ: {e}")
-
-
-async def delete_message(chat_id: int, message_id: int):
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                f"{TELEGRAM_API_URL}/deleteMessage",
-                json={"chat_id": chat_id, "message_id": message_id}
-            )
-            print(f"УДАЛЕНИЕ СООБЩЕНИЯ: {response.status_code} | {response.text}")
-    except Exception as e:
-        print(f"ОШИБКА ПРИ УДАЛЕНИИ СООБЩЕНИЯ: {e}")
-
-
-async def edit_last_message_to_main_menu(chat_id: int):
-    message_id = last_bot_messages.get(chat_id)
+async def send_catalog_menu(chat_id: int):
+    catalog_text = (
+        "📦 <b>Категории товаров:</b>\n"
+        "━━━━━━━━━━━━━━━\n"
+        "💻 <b>Ноутбуки</b> — для игр, учёбы и работы\n"
+        "📱 <b>Телефоны</b> — от кнопочных до флагманов\n"
+        "🖥 <b>Комплектующие</b> — для сборки вашего ПК\n\n"
+        "👇 Выберите категорию ниже:"
+    )
     reply_markup = {
-        "keyboard": [
-            [{"text": "📦 Каталог"}],
-            [{"text": "ℹ️ О нас"}, {"text": "📞 Контакты"}],
-            [{"text": "❓ Помощь"}]
-        ],
-        "resize_keyboard": True
+        "inline_keyboard": [
+            [{"text": "💻 Ноутбуки", "callback_data": "laptops"}],
+            [{"text": "📱 Телефоны", "callback_data": "phones"}],
+            [{"text": "🖥 Комплектующие", "callback_data": "components"}]
+        ]
     }
-
-    if not message_id:
-        await send_main_menu(chat_id)
-        return
-
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                f"{TELEGRAM_API_URL}/editMessageText",
-                json={
-                    "chat_id": chat_id,
-                    "message_id": message_id,
-                    "text": "🎉 Добро пожаловать в ETRONICS STORE!\n\nВыберите интересующий вас раздел ниже 👇",
-                    "reply_markup": reply_markup
-                }
-            )
-            print(f"РЕДАКТИРОВАНИЕ МЕНЮ: {response.status_code} | {response.text}")
-            if response.status_code != 200:
-                raise Exception("Нельзя редактировать, пробуем удалить")
-    except:
-        await delete_message(chat_id, message_id)
-        await send_main_menu(chat_id)
-
-
-async def send_catalog_update(chat_id: int, message_id: int, text: str, reply_markup: dict):
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            f"{TELEGRAM_API_URL}/editMessageText",
-            json={
-                "chat_id": chat_id,
-                "message_id": message_id,
-                "text": text,
-                "reply_markup": reply_markup
-            }
-        )
-        print(f"ОБНОВЛЕНИЕ КАТАЛОГА: {response.status_code} | {response.text}")
-
-
-async def ask_gpt(messages: list) -> str:
-    try:
-        client = openai.OpenAI(api_key=OPENAI_API_KEY)
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=messages,
-            max_tokens=300,
-            temperature=0.7
-        )
-        return response.choices[0].message.content.strip()
-    except Exception as e:
-        print(f"GPT ERROR: {e}")
-        return "Произошла ошибка при получении ответа от ИИ 😔"
+    await send_message(chat_id, catalog_text, reply_markup)
