@@ -55,12 +55,13 @@ async def telegram_webhook(request: Request):
                 )
                 reply_markup = {
                     "inline_keyboard": [
-                        [{"text": "📲 Свяжитесь с нами", "callback_data": "contacts"}]
+                        [{"text": "📲 Свяжитесь с нами", "callback_data": "contacts"}],
+                        [{"text": "📋 Меню", "callback_data": "main_menu"}]
                     ]
                 }
                 await send_message(chat_id, about_text, reply_markup)
             elif text == "📞 Контакты":
-                await send_message(chat_id, "📧 support@etronics.pro\n📱 @etronics_support")
+                await send_contacts(chat_id)
             elif text == "❓ Помощь":
                 user_states[chat_id] = "gpt"
                 dialog_history[chat_id] = []
@@ -86,7 +87,10 @@ async def telegram_webhook(request: Request):
         print(f"CALLBACK: {data_value}")
 
         if data_value == "contacts":
-            await send_message(chat_id, "📧 support@etronics.pro\n📱 @etronics_support")
+            await send_contacts(chat_id)
+        elif data_value == "main_menu":
+            await clear_chat(chat_id, message_id + 1)
+            await send_main_menu(chat_id)
         elif data_value == "laptops":
             sub_markup = {
                 "inline_keyboard": [
@@ -129,11 +133,12 @@ async def telegram_webhook(request: Request):
     return {"ok": True}
 
 async def clear_chat(chat_id: int, until_message_id: int):
-    for msg_id in range(until_message_id - 1, until_message_id - 10, -1):
-        await httpx.AsyncClient().post(
-            f"{TELEGRAM_API_URL}/deleteMessage",
-            json={"chat_id": chat_id, "message_id": msg_id}
-        )
+    async with httpx.AsyncClient() as client:
+        for msg_id in range(until_message_id - 1, until_message_id - 15, -1):
+            await client.post(
+                f"{TELEGRAM_API_URL}/deleteMessage",
+                json={"chat_id": chat_id, "message_id": msg_id}
+            )
 
 async def send_main_menu(chat_id: int):
     reply_markup = {
@@ -144,7 +149,7 @@ async def send_main_menu(chat_id: int):
         ],
         "resize_keyboard": True
     }
-    await send_message(chat_id, "👋 Добро пожаловать в ETRONICS STORE!\n\nВыберите интересующий вас раздел 👇", reply_markup)
+    await send_message(chat_id, "👋 Добро пожаловать в ETRONICS STORE!\n\nВыберите интересующий вас раздел", reply_markup)
 
 async def send_catalog_menu(chat_id: int):
     reply_markup = {
@@ -155,6 +160,15 @@ async def send_catalog_menu(chat_id: int):
         ]
     }
     await send_message(chat_id, "Выберите категорию товара:", reply_markup)
+
+async def send_contacts(chat_id: int):
+    contact_text = "📧 support@etronics.pro\n📱 @etronics_support"
+    reply_markup = {
+        "inline_keyboard": [
+            [{"text": "📋 Меню", "callback_data": "main_menu"}]
+        ]
+    }
+    await send_message(chat_id, contact_text, reply_markup)
 
 async def send_message(chat_id: int, text: str, reply_markup=None):
     payload = {
