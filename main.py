@@ -138,6 +138,15 @@ async def telegram_webhook(request: Request):
                 ]
             }
             await send_catalog_update(chat_id, message_id, "📱 ВЫБЕРИТЕ ТИП ТЕЛЕФОНА:", sub_markup)
+        elif data_value == "phones_smart":
+            sub_markup = {
+                "inline_keyboard": [
+                    [{"text": "📱 SAMSUNG", "callback_data": "samsung"}],
+                    [{"text": "📱 XIAOMI", "callback_data": "xiaomi"}],
+                    [{"text": "⬅️ НАЗАД", "callback_data": "phones"}]
+                ]
+            }
+            await send_catalog_update(chat_id, message_id, "📱 ВЫБЕРИТЕ БРЕНД:", sub_markup)
         elif data_value == "catalog":
             reply_markup = {
                 "inline_keyboard": [
