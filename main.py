@@ -146,17 +146,6 @@ async def send_main_menu(chat_id: int):
     await send_message(chat_id, "🎉 Добро пожаловать в ETRONICS STORE!\n\nВыберите интересующий вас раздел ниже 👇", reply_markup)
 
 
-async def send_catalog_menu(chat_id: int):
-    reply_markup = {
-        "inline_keyboard": [
-            [{"text": "💻 Ноутбуки", "callback_data": "laptops"}],
-            [{"text": "📱 Телефоны", "callback_data": "phones"}],
-            [{"text": "🖥 Комплектующие", "callback_data": "components"}]
-        ]
-    }
-    await send_message(chat_id, "Выберите категорию товара:", reply_markup)
-
-
 async def send_message(chat_id: int, text: str, reply_markup=None):
     payload = {
         "chat_id": chat_id,
@@ -176,12 +165,20 @@ async def send_message(chat_id: int, text: str, reply_markup=None):
         print(f"ОШИБКА ПРИ ОТПРАВКЕ СООБЩЕНИЯ: {e}")
 
 
+async def delete_message(chat_id: int, message_id: int):
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{TELEGRAM_API_URL}/deleteMessage",
+                json={"chat_id": chat_id, "message_id": message_id}
+            )
+            print(f"УДАЛЕНИЕ СООБЩЕНИЯ: {response.status_code} | {response.text}")
+    except Exception as e:
+        print(f"ОШИБКА ПРИ УДАЛЕНИИ СООБЩЕНИЯ: {e}")
+
+
 async def edit_last_message_to_main_menu(chat_id: int):
     message_id = last_bot_messages.get(chat_id)
-    if not message_id:
-        await send_main_menu(chat_id)
-        return
-
     reply_markup = {
         "keyboard": [
             [{"text": "📦 Каталог"}],
@@ -190,6 +187,10 @@ async def edit_last_message_to_main_menu(chat_id: int):
         ],
         "resize_keyboard": True
     }
+
+    if not message_id:
+        await send_main_menu(chat_id)
+        return
 
     try:
         async with httpx.AsyncClient() as client:
@@ -203,8 +204,11 @@ async def edit_last_message_to_main_menu(chat_id: int):
                 }
             )
             print(f"РЕДАКТИРОВАНИЕ МЕНЮ: {response.status_code} | {response.text}")
-    except Exception as e:
-        print(f"ОШИБКА ПРИ РЕДАКТИРОВАНИИ МЕНЮ: {e}")
+            if response.status_code != 200:
+                raise Exception("Нельзя редактировать, пробуем удалить")
+    except:
+        await delete_message(chat_id, message_id)
+        await send_main_menu(chat_id)
 
 
 async def send_catalog_update(chat_id: int, message_id: int, text: str, reply_markup: dict):
