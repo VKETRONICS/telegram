@@ -26,7 +26,7 @@ async def telegram_webhook(request: Request):
         print(f"ПОЛУЧЕНО СООБЩЕНИЕ: {text}")
 
         if chat_id and text:
-            if text == "/start" or text == "/menu":
+            if text in ["/start", "/menu", "📋 Меню"]:
                 user_states[chat_id] = "menu"
                 dialog_history.pop(chat_id, None)
                 await send_main_menu(chat_id)
@@ -199,3 +199,10 @@ async def ask_gpt(messages: list) -> str:
     except Exception as e:
         print(f"GPT ERROR: {e}")
         return "Произошла ошибка при получении ответа от ИИ 😔"
+Если всё ок — следующим шагом можно:
+
+Добавить логотип (изображение)
+
+В контакты — кнопку с переходом на группу ВК или сайт
+
+Готов продолжать, как только ты скажешь! ✅
