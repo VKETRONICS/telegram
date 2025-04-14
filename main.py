@@ -29,6 +29,7 @@ async def telegram_webhook(request: Request):
             if text == "/start" or text == "/menu" or text == "📋 Меню":
                 user_states[chat_id] = "menu"
                 dialog_history.pop(chat_id, None)
+                await clear_chat(chat_id)
                 await send_main_menu(chat_id)
             elif text == "📦 Каталог":
                 await send_catalog_menu(chat_id)
@@ -56,7 +57,7 @@ async def telegram_webhook(request: Request):
                         [{"text": "📲 Свяжитесь с нами", "callback_data": "contacts"}]
                     ]
                 })
-                await send_main_menu(chat_id)
+                await send_reply_keyboard(chat_id)
             elif text == "📞 Контакты":
                 await send_message(chat_id, "📧 support@etronics.pro\n📱 @etronics_support")
             elif text == "❓ Помощь":
@@ -126,6 +127,9 @@ async def telegram_webhook(request: Request):
 
     return {"ok": True}
 
+async def clear_chat(chat_id: int):
+    await send_message(chat_id, "🔄", {"remove_keyboard": True})
+
 async def send_main_menu(chat_id: int):
     reply_markup = {
         "keyboard": [
@@ -136,6 +140,13 @@ async def send_main_menu(chat_id: int):
         "resize_keyboard": True
     }
     await send_message(chat_id, "🎉 Добро пожаловать в ETRONICS STORE!\n\nВыберите интересующий вас раздел ниже 👇", reply_markup)
+
+async def send_reply_keyboard(chat_id: int):
+    reply_markup = {
+        "keyboard": [[{"text": "📋 Меню"}]],
+        "resize_keyboard": True
+    }
+    await send_message(chat_id, "⬅️ Нажмите кнопку «Меню» для возврата", reply_markup)
 
 async def send_catalog_menu(chat_id: int):
     reply_markup = {
