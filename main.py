@@ -71,6 +71,7 @@ async def telegram_webhook(request: Request):
                 })
             elif text == "🧹 ОЧИСТИТЬ ЧАТ":
                 await clear_chat(chat_id, message_id)
+                await send_main_menu(chat_id)
             elif user_states.get(chat_id) == "gpt":
                 dialog_history.setdefault(chat_id, [])
                 dialog_history[chat_id].append({"role": "user", "content": text})
