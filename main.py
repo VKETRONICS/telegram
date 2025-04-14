@@ -132,8 +132,38 @@ async def handle_catalog_callbacks(chat_id: int, message_id: int, data_value: st
             ("👨‍🎓 ДЛЯ РАБОТЫ И УЧЁБЫ", "laptop_workstudy"),
             ("⬅️ НАЗАД", "catalog")
         ],
+        "ready_pcs": [
+            ("🖥 МОНОБЛОКИ", "monoblocks"),
+            ("💻 НЕТТОПЫ", "nettops"),
+            ("🧱 СИСТЕМНЫЕ БЛОКИ", "towers"),
+            ("📋 ПОКАЗАТЬ ВСЁ", "ready_all"),
+            ("⬅️ НАЗАД", "catalog")
+        ],
+        "phones_smart": [
+            ("📱 SAMSUNG", "samsung"),
+            ("📱 XIAOMI", "xiaomi"),
+            ("📋 ПОКАЗАТЬ ВСЁ", "phones_all"),
+            ("⬅️ НАЗАД", "catalog")
+        ],
+        "tablets": [
+            ("📱 SAMSUNG", "tablet_samsung"),
+            ("📱 XIAOMI", "tablet_xiaomi"),
+            ("📋 ПОКАЗАТЬ ВСЁ", "tablet_all"),
+            ("⬅️ НАЗАД", "catalog")
+        ],
+        "ebooks": [
+            ("📘 POCKETBOOK", "ebook_pocketbook"),
+            ("📗 ONYX BOOX", "ebook_onyx"),
+            ("📕 DIGMA", "ebook_digma"),
+            ("📋 ПОКАЗАТЬ ВСЁ", "ebook_all"),
+            ("⬅️ НАЗАД", "catalog")
+        ],
         "catalog": [
-            ("💻 НОУТБУКИ", "laptops")
+            ("💻 НОУТБУКИ", "laptops"),
+            ("🖥 ГОТОВЫЕ ПК", "ready_pcs"),
+            ("📱 СМАРТФОНЫ", "phones_smart"),
+            ("📱 ПЛАНШЕТЫ", "tablets"),
+            ("📚 ЭЛЕКТРОННЫЕ КНИГИ", "ebooks")
         ]
     }
     if data_value in subcategories:
@@ -142,6 +172,7 @@ async def handle_catalog_callbacks(chat_id: int, message_id: int, data_value: st
         }
         await send_catalog_update(chat_id, message_id, "ВЫБЕРИТЕ ПОДКАТЕГОРИЮ:", reply_markup)
 
+# Остальной код ниже не изменяется
 async def send_catalog_update(chat_id: int, message_id: int, text: str, reply_markup: dict):
     async with httpx.AsyncClient() as client:
         await client.post(
@@ -176,7 +207,11 @@ async def send_main_menu(chat_id: int):
 async def send_catalog_menu(chat_id: int):
     reply_markup = {
         "inline_keyboard": [
-            [{"text": "💻 НОУТБУКИ", "callback_data": "laptops"}]
+            [{"text": "💻 НОУТБУКИ", "callback_data": "laptops"}],
+            [{"text": "🖥 ГОТОВЫЕ ПК", "callback_data": "ready_pcs"}],
+            [{"text": "📱 СМАРТФОНЫ", "callback_data": "phones_smart"}],
+            [{"text": "📱 ПЛАНШЕТЫ", "callback_data": "tablets"}],
+            [{"text": "📚 ЭЛЕКТРОННЫЕ КНИГИ", "callback_data": "ebooks"}]
         ]
     }
     await send_message(chat_id, "ВЫБЕРИТЕ КАТЕГОРИЮ ТОВАРА:", reply_markup)
