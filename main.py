@@ -14,6 +14,7 @@ TELEGRAM_API_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
 user_states = {}
 dialog_history = {}
+last_bot_messages = {}  # chat_id: message_id
 
 @app.post("/webhook")
 async def telegram_webhook(request: Request):
@@ -29,7 +30,7 @@ async def telegram_webhook(request: Request):
             if text in ["/start", "/menu", "📋 Меню"]:
                 user_states[chat_id] = "menu"
                 dialog_history.pop(chat_id, None)
-                await send_main_menu(chat_id)
+                await edit_last_message_to_main_menu(chat_id)
 
             elif text == "📦 Каталог":
                 await send_catalog_menu(chat_id)
@@ -168,8 +169,42 @@ async def send_message(chat_id: int, text: str, reply_markup=None):
         async with httpx.AsyncClient() as client:
             response = await client.post(f"{TELEGRAM_API_URL}/sendMessage", json=payload)
             print(f"ОТПРАВКА СООБЩЕНИЯ: {response.status_code} | {response.text}")
+            if response.status_code == 200:
+                message_id = response.json()["result"]["message_id"]
+                last_bot_messages[chat_id] = message_id
     except Exception as e:
         print(f"ОШИБКА ПРИ ОТПРАВКЕ СООБЩЕНИЯ: {e}")
+
+
+async def edit_last_message_to_main_menu(chat_id: int):
+    message_id = last_bot_messages.get(chat_id)
+    if not message_id:
+        await send_main_menu(chat_id)
+        return
+
+    reply_markup = {
+        "keyboard": [
+            [{"text": "📦 Каталог"}],
+            [{"text": "ℹ️ О нас"}, {"text": "📞 Контакты"}],
+            [{"text": "❓ Помощь"}]
+        ],
+        "resize_keyboard": True
+    }
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{TELEGRAM_API_URL}/editMessageText",
+                json={
+                    "chat_id": chat_id,
+                    "message_id": message_id,
+                    "text": "🎉 Добро пожаловать в ETRONICS STORE!\n\nВыберите интересующий вас раздел ниже 👇",
+                    "reply_markup": reply_markup
+                }
+            )
+            print(f"РЕДАКТИРОВАНИЕ МЕНЮ: {response.status_code} | {response.text}")
+    except Exception as e:
+        print(f"ОШИБКА ПРИ РЕДАКТИРОВАНИИ МЕНЮ: {e}")
 
 
 async def send_catalog_update(chat_id: int, message_id: int, text: str, reply_markup: dict):
