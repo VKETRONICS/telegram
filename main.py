@@ -26,7 +26,7 @@ async def telegram_webhook(request: Request):
         print(f"ПОЛУЧЕНО СООБЩЕНИЕ: {text}")
 
         if chat_id and text:
-            if text in ["/start", "/menu", "📋 Меню"]:
+            if text == "/start" or text == "/menu" or text == "📋 Меню":
                 user_states[chat_id] = "menu"
                 dialog_history.pop(chat_id, None)
                 await send_main_menu(chat_id)
@@ -51,12 +51,12 @@ async def telegram_webhook(request: Request):
                     "• 🔧 Настройка оборудования\n"
                     "• 💬 Гарантийная и постгарантийная поддержка"
                 )
-                reply_markup = {
+                await send_message(chat_id, about_text, {
                     "inline_keyboard": [
                         [{"text": "📲 Свяжитесь с нами", "callback_data": "contacts"}]
                     ]
-                }
-                await send_message(chat_id, about_text, reply_markup)
+                })
+                await send_main_menu(chat_id)
             elif text == "📞 Контакты":
                 await send_message(chat_id, "📧 support@etronics.pro\n📱 @etronics_support")
             elif text == "❓ Помощь":
@@ -83,7 +83,9 @@ async def telegram_webhook(request: Request):
         data_value = callback.get("data", "")
         print(f"CALLBACK: {data_value}")
 
-        if data_value == "laptops":
+        if data_value == "contacts":
+            await send_message(chat_id, "📧 support@etronics.pro\n📱 @etronics_support")
+        elif data_value == "laptops":
             sub_markup = {
                 "inline_keyboard": [
                     [{"text": "🎮 Игровые ноутбуки", "callback_data": "laptop_gaming"}],
@@ -92,7 +94,6 @@ async def telegram_webhook(request: Request):
                 ]
             }
             await send_catalog_update(chat_id, message_id, "💻 Выберите подкатегорию:", sub_markup)
-
         elif data_value == "laptop_workstudy":
             sub_markup = {
                 "inline_keyboard": [
@@ -104,7 +105,6 @@ async def telegram_webhook(request: Request):
                 ]
             }
             await send_catalog_update(chat_id, message_id, "👨‍🎓 Выберите размер ноутбука:", sub_markup)
-
         elif data_value == "phones":
             sub_markup = {
                 "inline_keyboard": [
@@ -114,7 +114,6 @@ async def telegram_webhook(request: Request):
                 ]
             }
             await send_catalog_update(chat_id, message_id, "📱 Выберите тип телефона:", sub_markup)
-
         elif data_value == "catalog":
             reply_markup = {
                 "inline_keyboard": [
@@ -124,9 +123,6 @@ async def telegram_webhook(request: Request):
                 ]
             }
             await send_catalog_update(chat_id, message_id, "Выберите категорию товара:", reply_markup)
-
-        elif data_value == "contacts":
-            await send_message(chat_id, "📧 support@etronics.pro\n📱 @etronics_support")
 
     return {"ok": True}
 
