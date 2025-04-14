@@ -109,61 +109,6 @@ async def telegram_webhook(request: Request):
         elif data_value == "main_menu":
             await clear_chat(chat_id, message_id + 1)
             await send_main_menu(chat_id)
-        elif data_value == "laptops":
-            sub_markup = {
-                "inline_keyboard": [
-                    [{"text": "🎮 ИГРОВЫЕ НОУТБУКИ", "callback_data": "laptop_gaming"}],
-                    [{"text": "👨‍🎓 ДЛЯ РАБОТЫ И УЧЁБЫ", "callback_data": "laptop_workstudy"}],
-                    [{"text": "⬅️ НАЗАД", "callback_data": "catalog"}]
-                ]
-            }
-            await send_catalog_update(chat_id, message_id, "💻 ВЫБЕРИТЕ ПОДКАТЕГОРИЮ:", sub_markup)
-
-        elif data_value == "laptop_workstudy":
-            sub_markup = {
-                "inline_keyboard": [
-                    [{"text": "💻 12–14", "callback_data": "work_12_14"}],
-                    [{"text": "💻 15–16", "callback_data": "work_15_16"}],
-                    [{"text": "💻 17–18", "callback_data": "work_17_18"}],
-                    [{"text": "📋 ВСЕ РАЗМЕРЫ", "callback_data": "work_full_list"}],
-                    [{"text": "⬅️ НАЗАД", "callback_data": "laptops"}]
-                ]
-            }
-            await send_catalog_update(chat_id, message_id, "👨‍🎓 ВЫБЕРИТЕ РАЗМЕР НОУТБУКА:", sub_markup)
-
-        elif data_value == "phones":
-            sub_markup = {
-                "inline_keyboard": [
-                    [{"text": "📱 СМАРТФОНЫ", "callback_data": "phones_smart"}],
-                    [{"text": "📞 КНОПОЧНЫЕ ТЕЛЕФОНЫ", "callback_data": "phones_button"}],
-                    [{"text": "⬅️ НАЗАД", "callback_data": "catalog"}]
-                ]
-            }
-            await send_catalog_update(chat_id, message_id, "📱 ВЫБЕРИТЕ ТИП ТЕЛЕФОНА:", sub_markup)
-
-        elif data_value == "phones_smart":
-            sub_markup = {
-                "inline_keyboard": [
-                    [{"text": "📱 SAMSUNG", "callback_data": "samsung"}],
-                    [{"text": "📱 XIAOMI", "callback_data": "xiaomi"}],
-                    [{"text": "📋 ПОКАЗАТЬ ВСЁ", "callback_data": "smartphones_all"}],
-                    [{"text": "⬅️ НАЗАД", "callback_data": "phones"}]
-                ]
-            }
-            await send_catalog_update(chat_id, message_id, "📱 ВЫБЕРИТЕ БРЕНД:", sub_markup)
-
-        elif data_value == "catalog":
-            reply_markup = {
-                "inline_keyboard": [
-                    [{"text": "💻 НОУТБУКИ", "callback_data": "laptops"}],
-                    [{"text": "🖥 ГОТОВЫЕ ПК", "callback_data": "ready_pcs"}],
-                    [{"text": "📱 СМАРТФОНЫ", "callback_data": "phones_smart"}],
-                    [{"text": "📱 ПЛАНШЕТЫ", "callback_data": "tablets"}],
-                    [{"text": "📚 ЭЛЕКТРОННЫЕ КНИГИ", "callback_data": "ebooks"}],
-                    [{"text": "⬅️ НАЗАД", "callback_data": "main_menu"}]
-                ]
-            }
-            await send_catalog_update(chat_id, message_id, "ВЫБЕРИТЕ КАТЕГОРИЮ ТОВАРА:", reply_markup)
 
     return {"ok": True}
 
@@ -211,18 +156,6 @@ async def send_message(chat_id: int, text: str, reply_markup=None):
             print(f"ОТПРАВКА СООБЩЕНИЯ: {response.status_code} | {response.text}")
     except Exception as e:
         print(f"ОШИБКА ПРИ ОТПРАВКЕ СООБЩЕНИЯ: {e}")
-
-async def send_catalog_update(chat_id: int, message_id: int, text: str, reply_markup: dict):
-    async with httpx.AsyncClient() as client:
-        await client.post(
-            f"{TELEGRAM_API_URL}/editMessageText",
-            json={
-                "chat_id": chat_id,
-                "message_id": message_id,
-                "text": text,
-                "reply_markup": reply_markup
-            }
-        )
 
 async def ask_gpt(messages: list) -> str:
     try:
