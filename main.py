@@ -47,7 +47,7 @@ async def telegram_webhook(request: Request):
                     "• 🎧 Аксессуары - мыши, клавиатуры, наушники, SSD и другое\n\n"
                     "📦 ПОЧЕМУ ВЫБИРАЮТ НАС:\n"
                     "• 💻 Индивидуальный подход\n"
-                    "• 💬 Профессиональная консультация\n"
+                    "• 🧑‍💼 Профессиональная консультация\n"
                     "• ✅ Качество комплектующих\n"
                     "• 🚚 Быстрая доставка\n"
                     "• 🔧 Настройка оборудования\n"
@@ -109,6 +109,17 @@ async def telegram_webhook(request: Request):
         elif data_value == "main_menu":
             await clear_chat(chat_id, message_id + 1)
             await send_main_menu(chat_id)
+        elif data_value == "laptop_workstudy":
+            sub_markup = {
+                "inline_keyboard": [
+                    [{"text": "💻 12–14", "callback_data": "work_12_14"}],
+                    [{"text": "💻 15–16", "callback_data": "work_15_16"}],
+                    [{"text": "💻 17–18", "callback_data": "work_17_18"}],
+                    [{"text": "📋 ВЕСЬ СПИСОК (ВСЕ РАЗМЕРЫ)", "callback_data": "work_full_list"}],
+                    [{"text": "⬅️ НАЗАД", "callback_data": "laptops"}]
+                ]
+            }
+            await send_catalog_update(chat_id, message_id, "👨‍🎓 ВЫБЕРИТЕ РАЗМЕР НОУТБУКА:", sub_markup)
         else:
             await handle_catalog_callbacks(chat_id, message_id, data_value)
 
@@ -121,38 +132,8 @@ async def handle_catalog_callbacks(chat_id: int, message_id: int, data_value: st
             ("👨‍🎓 ДЛЯ РАБОТЫ И УЧЁБЫ", "laptop_workstudy"),
             ("⬅️ НАЗАД", "catalog")
         ],
-        "ready_pcs": [
-            ("🖥 МОНОБЛОКИ", "monoblocks"),
-            ("💻 НЕТТОПЫ", "nettops"),
-            ("🧱 СИСТЕМНЫЕ БЛОКИ", "towers"),
-            ("📋 ПОКАЗАТЬ ВСЁ", "ready_all"),
-            ("⬅️ НАЗАД", "catalog")
-        ],
-        "phones_smart": [
-            ("📱 SAMSUNG", "samsung"),
-            ("📱 XIAOMI", "xiaomi"),
-            ("📋 ПОКАЗАТЬ ВСЁ", "phones_all"),
-            ("⬅️ НАЗАД", "catalog")
-        ],
-        "tablets": [
-            ("📱 SAMSUNG", "tablet_samsung"),
-            ("📱 XIAOMI", "tablet_xiaomi"),
-            ("📋 ПОКАЗАТЬ ВСЁ", "tablet_all"),
-            ("⬅️ НАЗАД", "catalog")
-        ],
-        "ebooks": [
-            ("📘 POCKETBOOK", "ebook_pocketbook"),
-            ("📗 ONYX BOOX", "ebook_onyx"),
-            ("📕 DIGMA", "ebook_digma"),
-            ("📋 ПОКАЗАТЬ ВСЁ", "ebook_all"),
-            ("⬅️ НАЗАД", "catalog")
-        ],
         "catalog": [
-            ("💻 НОУТБУКИ", "laptops"),
-            ("🖥 ГОТОВЫЕ ПК", "ready_pcs"),
-            ("📱 СМАРТФОНЫ", "phones_smart"),
-            ("📱 ПЛАНШЕТЫ", "tablets"),
-            ("📚 ЭЛЕКТРОННЫЕ КНИГИ", "ebooks")
+            ("💻 НОУТБУКИ", "laptops")
         ]
     }
     if data_value in subcategories:
@@ -195,11 +176,7 @@ async def send_main_menu(chat_id: int):
 async def send_catalog_menu(chat_id: int):
     reply_markup = {
         "inline_keyboard": [
-            [{"text": "💻 НОУТБУКИ", "callback_data": "laptops"}],
-            [{"text": "🖥 ГОТОВЫЕ ПК", "callback_data": "ready_pcs"}],
-            [{"text": "📱 СМАРТФОНЫ", "callback_data": "phones_smart"}],
-            [{"text": "📱 ПЛАНШЕТЫ", "callback_data": "tablets"}],
-            [{"text": "📚 ЭЛЕКТРОННЫЕ КНИГИ", "callback_data": "ebooks"}]
+            [{"text": "💻 НОУТБУКИ", "callback_data": "laptops"}]
         ]
     }
     await send_message(chat_id, "ВЫБЕРИТЕ КАТЕГОРИЮ ТОВАРА:", reply_markup)
