@@ -14,7 +14,6 @@ TELEGRAM_API_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
 user_states = {}
 dialog_history = {}
-last_bot_messages = {}  # chat_id: message_id
 
 @app.post("/webhook")
 async def telegram_webhook(request: Request):
@@ -27,65 +26,16 @@ async def telegram_webhook(request: Request):
         print(f"ПОЛУЧЕНО СООБЩЕНИЕ: {text}")
 
         if chat_id and text:
-            if text == "/start":
+            if text == "/start" or text == "/menu":
                 user_states[chat_id] = "menu"
                 dialog_history.pop(chat_id, None)
                 await send_main_menu(chat_id)
-
-            elif text in ["/menu", "📋 Меню"]:
-                user_states[chat_id] = "menu"
-                dialog_history.pop(chat_id, None)
-                await edit_last_message_to_main_menu(chat_id)
-
             elif text == "📦 Каталог":
                 await send_catalog_menu(chat_id)
-
             elif text == "ℹ️ О нас":
-                about_text = (
-                    "🔧 ETRONICS - ваш проводник в мире электроники!
-
-"
-                    "💻 Мы собираем компьютеры любой конфигурации на заказ:
-"
-                    "• 🎮 Игровые сборки
-"
-                    "• 🏢 ПК для учебы, офиса и работы
-"
-                    "• 💼 Станции для профессионалов и творчества
-
-"
-                    "🖥 Всегда в наличии:
-"
-                    "• 💻 Ноутбуки - от бюджетных до премиум
-"
-                    "• 🎧 Аксессуары - мыши, клавиатуры, наушники, SSD и другое
-
-"
-                    "📦 Почему выбирают нас:
-"
-                    "• 🧑‍💻 Индивидуальный подход
-"
-                    "• ✅ Качество комплектующих
-"
-                    "• 🚚 Быстрая доставка
-"
-                    "• 💬 Настройка оборудования, поддержка и консультации
-
-"
-                    "📲 Свяжитесь с нами:"
-                )
-                reply_markup = {
-                    "keyboard": [
-                        [{"text": "📞 Контакты"}],
-                        [{"text": "📋 Меню"}]
-                    ],
-                    "resize_keyboard": True
-                }
-                await send_message(chat_id, about_text, reply_markup)
-
+                await send_message(chat_id, "🔧 ETRONICS — ваш проводник в мире электроники! 💻📱🖥")
             elif text == "📞 Контакты":
                 await send_message(chat_id, "📧 support@etronics.pro\n📱 @etronics_support")
-
             elif text == "❓ Помощь":
                 user_states[chat_id] = "gpt"
                 dialog_history[chat_id] = []
@@ -93,7 +43,6 @@ async def telegram_webhook(request: Request):
                     "keyboard": [[{"text": "📋 Меню"}]],
                     "resize_keyboard": True
                 })
-
             elif user_states.get(chat_id) == "gpt":
                 dialog_history.setdefault(chat_id, [])
                 dialog_history[chat_id].append({"role": "user", "content": text})
@@ -155,6 +104,41 @@ async def telegram_webhook(request: Request):
 
     return {"ok": True}
 
+async def send_main_menu(chat_id: int):
+    reply_markup = {
+        "keyboard": [
+            [{"text": "📦 Каталог"}],
+            [{"text": "ℹ️ О нас"}, {"text": "📞 Контакты"}],
+            [{"text": "❓ Помощь"}]
+        ],
+        "resize_keyboard": True
+    }
+    await send_message(chat_id, "🎉 Добро пожаловать в ETRONICS STORE!\n\nВыберите интересующий вас раздел ниже 👇", reply_markup)
+
+async def send_catalog_menu(chat_id: int):
+    reply_markup = {
+        "inline_keyboard": [
+            [{"text": "💻 Ноутбуки", "callback_data": "laptops"}],
+            [{"text": "📱 Телефоны", "callback_data": "phones"}],
+            [{"text": "🖥 Комплектующие", "callback_data": "components"}]
+        ]
+    }
+    await send_message(chat_id, "Выберите категорию товара:", reply_markup)
+
+async def send_message(chat_id: int, text: str, reply_markup=None):
+    payload = {
+        "chat_id": chat_id,
+        "text": text
+    }
+    if reply_markup is not None:
+        payload["reply_markup"] = reply_markup
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(f"{TELEGRAM_API_URL}/sendMessage", json=payload)
+            print(f"ОТПРАВКА СООБЩЕНИЯ: {response.status_code} | {response.text}")
+    except Exception as e:
+        print(f"ОШИБКА ПРИ ОТПРАВКЕ СООБЩЕНИЯ: {e}")
 
 async def send_catalog_update(chat_id: int, message_id: int, text: str, reply_markup: dict):
     async with httpx.AsyncClient() as client:
@@ -169,41 +153,16 @@ async def send_catalog_update(chat_id: int, message_id: int, text: str, reply_ma
         )
         print(f"ОБНОВЛЕНИЕ КАТАЛОГА: {response.status_code} | {response.text}")
 
-
-async def send_catalog_menu(chat_id: int):
-    catalog_text = (
-        "📦 <b>Категории товаров:</b>\n"
-        "━━━━━━━━━━━━━━━\n"
-        "💻 <b>Ноутбуки</b> — для игр, учёбы и работы\n"
-        "📱 <b>Телефоны</b> — от кнопочных до флагманов\n"
-        "🖥 <b>Комплектующие</b> — для сборки вашего ПК\n\n"
-        "👇 Выберите категорию ниже:"
-    )
-    reply_markup = {
-        "inline_keyboard": [
-            [{"text": "💻 Ноутбуки", "callback_data": "laptops"}],
-            [{"text": "📱 Телефоны", "callback_data": "phones"}],
-            [{"text": "🖥 Комплектующие", "callback_data": "components"}]
-        ]
-    }
-    await send_message(chat_id, catalog_text, reply_markup)
-
-
-async def send_message(chat_id: int, text: str, reply_markup=None):
-    payload = {
-        "chat_id": chat_id,
-        "text": text,
-        "parse_mode": "HTML"
-    }
-    if reply_markup is not None:
-        payload["reply_markup"] = reply_markup
-
+async def ask_gpt(messages: list) -> str:
     try:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(f"{TELEGRAM_API_URL}/sendMessage", json=payload)
-            print(f"ОТПРАВКА СООБЩЕНИЯ: {response.status_code} | {response.text}")
-            if response.status_code == 200:
-                message_id = response.json()["result"]["message_id"]
-                last_bot_messages[chat_id] = message_id
+        client = openai.OpenAI(api_key=OPENAI_API_KEY)
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=messages,
+            max_tokens=300,
+            temperature=0.7
+        )
+        return response.choices[0].message.content.strip()
     except Exception as e:
-        print(f"ОШИБКА ПРИ ОТПРАВКЕ СООБЩЕНИЯ: {e}")
+        print(f"GPT ERROR: {e}")
+        return "Произошла ошибка при получении ответа от ИИ 😔"
