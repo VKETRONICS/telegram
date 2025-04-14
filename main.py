@@ -23,13 +23,11 @@ async def telegram_webhook(request: Request):
         message = data["message"]
         chat_id = message.get("chat", {}).get("id")
         text = message.get("text", "")
-        print(f"ПОЛУЧЕНО СООБЩЕНИЕ: {text}")
 
         if chat_id and text:
             if text == "/start" or text == "/menu" or text == "📋 Меню":
                 user_states[chat_id] = "menu"
                 dialog_history.pop(chat_id, None)
-                await clear_chat(chat_id)
                 await send_main_menu(chat_id)
             elif text == "📦 Каталог":
                 await send_catalog_menu(chat_id)
@@ -52,14 +50,16 @@ async def telegram_webhook(request: Request):
                     "• 🔧 Настройка оборудования\n"
                     "• 💬 Гарантийная и постгарантийная поддержка"
                 )
-                await send_message(chat_id, about_text, {
+                reply_markup = {
                     "inline_keyboard": [
                         [{"text": "📲 Свяжитесь с нами", "callback_data": "contacts"}]
                     ]
-                })
-                await send_reply_keyboard(chat_id)
+                }
+                await send_message(chat_id, about_text, reply_markup)
+                await send_back_to_menu_button(chat_id)
             elif text == "📞 Контакты":
                 await send_message(chat_id, "📧 support@etronics.pro\n📱 @etronics_support")
+                await send_back_to_menu_button(chat_id)
             elif text == "❓ Помощь":
                 user_states[chat_id] = "gpt"
                 dialog_history[chat_id] = []
@@ -82,11 +82,8 @@ async def telegram_webhook(request: Request):
         chat_id = callback["message"]["chat"]["id"]
         message_id = callback["message"]["message_id"]
         data_value = callback.get("data", "")
-        print(f"CALLBACK: {data_value}")
 
-        if data_value == "contacts":
-            await send_message(chat_id, "📧 support@etronics.pro\n📱 @etronics_support")
-        elif data_value == "laptops":
+        if data_value == "laptops":
             sub_markup = {
                 "inline_keyboard": [
                     [{"text": "🎮 Игровые ноутбуки", "callback_data": "laptop_gaming"}],
@@ -95,6 +92,7 @@ async def telegram_webhook(request: Request):
                 ]
             }
             await send_catalog_update(chat_id, message_id, "💻 Выберите подкатегорию:", sub_markup)
+
         elif data_value == "laptop_workstudy":
             sub_markup = {
                 "inline_keyboard": [
@@ -106,6 +104,7 @@ async def telegram_webhook(request: Request):
                 ]
             }
             await send_catalog_update(chat_id, message_id, "👨‍🎓 Выберите размер ноутбука:", sub_markup)
+
         elif data_value == "phones":
             sub_markup = {
                 "inline_keyboard": [
@@ -115,6 +114,7 @@ async def telegram_webhook(request: Request):
                 ]
             }
             await send_catalog_update(chat_id, message_id, "📱 Выберите тип телефона:", sub_markup)
+
         elif data_value == "catalog":
             reply_markup = {
                 "inline_keyboard": [
@@ -125,10 +125,11 @@ async def telegram_webhook(request: Request):
             }
             await send_catalog_update(chat_id, message_id, "Выберите категорию товара:", reply_markup)
 
-    return {"ok": True}
+        elif data_value == "contacts":
+            await send_message(chat_id, "📧 support@etronics.pro\n📱 @etronics_support")
+            await send_back_to_menu_button(chat_id)
 
-async def clear_chat(chat_id: int):
-    await send_message(chat_id, "🔄", {"remove_keyboard": True})
+    return {"ok": True}
 
 async def send_main_menu(chat_id: int):
     reply_markup = {
@@ -140,13 +141,6 @@ async def send_main_menu(chat_id: int):
         "resize_keyboard": True
     }
     await send_message(chat_id, "🎉 Добро пожаловать в ETRONICS STORE!\n\nВыберите интересующий вас раздел ниже 👇", reply_markup)
-
-async def send_reply_keyboard(chat_id: int):
-    reply_markup = {
-        "keyboard": [[{"text": "📋 Меню"}]],
-        "resize_keyboard": True
-    }
-    await send_message(chat_id, "⬅️ Нажмите кнопку «Меню» для возврата", reply_markup)
 
 async def send_catalog_menu(chat_id: int):
     reply_markup = {
@@ -168,14 +162,20 @@ async def send_message(chat_id: int, text: str, reply_markup=None):
 
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.post(f"{TELEGRAM_API_URL}/sendMessage", json=payload)
-            print(f"ОТПРАВКА СООБЩЕНИЯ: {response.status_code} | {response.text}")
+            await client.post(f"{TELEGRAM_API_URL}/sendMessage", json=payload)
     except Exception as e:
         print(f"ОШИБКА ПРИ ОТПРАВКЕ СООБЩЕНИЯ: {e}")
 
+async def send_back_to_menu_button(chat_id: int):
+    reply_markup = {
+        "keyboard": [[{"text": "📋 Меню"}]],
+        "resize_keyboard": True
+    }
+    await send_message(chat_id, "⬅️ Для возврата нажмите 📋 Меню", reply_markup)
+
 async def send_catalog_update(chat_id: int, message_id: int, text: str, reply_markup: dict):
     async with httpx.AsyncClient() as client:
-        response = await client.post(
+        await client.post(
             f"{TELEGRAM_API_URL}/editMessageText",
             json={
                 "chat_id": chat_id,
@@ -184,7 +184,6 @@ async def send_catalog_update(chat_id: int, message_id: int, text: str, reply_ma
                 "reply_markup": reply_markup
             }
         )
-        print(f"ОБНОВЛЕНИЕ КАТАЛОГА: {response.status_code} | {response.text}")
 
 async def ask_gpt(messages: list) -> str:
     try:
@@ -197,5 +196,4 @@ async def ask_gpt(messages: list) -> str:
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
-        print(f"GPT ERROR: {e}")
         return "Произошла ошибка при получении ответа от ИИ 😔"
