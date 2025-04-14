@@ -27,13 +27,15 @@ async def telegram_webhook(request: Request):
         print(f"ПОЛУЧЕНО СООБЩЕНИЕ: {text}")
 
         if chat_id and text:
-            if text in ["/start", "/menu", "📋 Меню"]:
+            if text == "/start":
                 user_states[chat_id] = "menu"
                 dialog_history.pop(chat_id, None)
-                if chat_id not in last_bot_messages:
-                    await send_main_menu(chat_id)
-                else:
-                    await edit_last_message_to_main_menu(chat_id)
+                await send_main_menu(chat_id)
+
+            elif text in ["/menu", "📋 Меню"]:
+                user_states[chat_id] = "menu"
+                dialog_history.pop(chat_id, None)
+                await edit_last_message_to_main_menu(chat_id)
 
             elif text == "📦 Каталог":
                 await send_catalog_menu(chat_id)
