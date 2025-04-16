@@ -3,6 +3,9 @@ import httpx
 import os
 from dotenv import load_dotenv
 import openai
+from datetime import datetime
+import pytz
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 load_dotenv()
 
@@ -15,6 +18,33 @@ TELEGRAM_API_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
 user_states = {}
 dialog_history = {}
 
+# ID группы, в которую бот будет отправлять ежедневное сообщение
+GROUP_CHAT_ID = os.getenv("GROUP_CHAT_ID")  # например: -1001234567890
+
+@app.on_event("startup")
+async def startup_event():
+    scheduler = AsyncIOScheduler(timezone="Europe/Moscow")
+    scheduler.add_job(send_daily_greeting, "cron", hour=10, minute=0)
+    scheduler.start()
+
+async def send_daily_greeting():
+    import random
+    if GROUP_CHAT_ID:
+        greetings = [
+            "☀️ Доброе утро, друзья! Сегодня отличный день, чтобы выбрать что-то новенькое из техники 💻",
+            "👋 Привет, команда! Готов помочь с подбором ноутбуков, ПК и всего, что связано с электроникой!",
+            "🔔 Напоминание от ETRONICS: я всегда рядом, если нужно что-то подобрать, сравнить или подсказать!",
+            "💡 Новое утро — новые идеи! Давайте выберем технику, которая подойдёт именно вам 👇",
+            "🎯 Начинаем день продуктивно! Бот уже проснулся и готов помочь с выбором электроники."
+        ]
+        text = random.choice(greetings) + "
+
+Нажмите кнопку ниже, чтобы начать 👇"
+        await send_message(int(GROUP_CHAT_ID), text, {
+            "keyboard": [[{"text": "📋 МЕНЮ"}]],
+            "resize_keyboard": True
+        })
+
 @app.post("/webhook")
 async def telegram_webhook(request: Request):
     data = await request.json()
@@ -25,6 +55,35 @@ async def telegram_webhook(request: Request):
         message_id = message.get("message_id")
         text = message.get("text", "")
         print(f"ПОЛУЧЕНО СООБЩЕНИЕ: {text}")
+
+        # Приветствие новых участников
+        if "new_chat_members" in message:
+            moscow_tz = pytz.timezone("Europe/Moscow")
+            now_hour = datetime.now(moscow_tz).hour
+
+            if 5 <= now_hour < 12:
+                greeting = "☀️ Доброе утро"
+            elif 12 <= now_hour < 17:
+                greeting = "🌤 Добрый день"
+            elif 17 <= now_hour < 23:
+                greeting = "🌇 Добрый вечер"
+            else:
+                greeting = "🌙 Доброй ночи"
+
+            for user in message["new_chat_members"]:
+                first_name = user.get("first_name", "друг")
+
+                welcome_text = (
+                    f"{greeting}, {first_name}!\n\n"
+                    "Добро пожаловать в группу ETRONICS 💡\n"
+                    "Я — бот-помощник. Могу подсказать с выбором техники, показать каталог или просто поболтать 🤖\n\n"
+                    "Нажмите кнопку ниже, чтобы начать 👇"
+                )
+
+                await send_message(chat_id, welcome_text, {
+                    "keyboard": [[{"text": "📋 МЕНЮ"}]],
+                    "resize_keyboard": True
+                })
 
         if chat_id and text:
             if text in ["/start", "/menu", "📋 МЕНЮ"]:
@@ -172,7 +231,6 @@ async def handle_catalog_callbacks(chat_id: int, message_id: int, data_value: st
         }
         await send_catalog_update(chat_id, message_id, "ВЫБЕРИТЕ ПОДКАТЕГОРИЮ:", reply_markup)
 
-# Остальной код ниже не изменяется
 async def send_catalog_update(chat_id: int, message_id: int, text: str, reply_markup: dict):
     async with httpx.AsyncClient() as client:
         await client.post(
@@ -202,7 +260,9 @@ async def send_main_menu(chat_id: int):
         ],
         "resize_keyboard": True
     }
-    await send_message(chat_id, "👋 Добро пожаловать в ETRONICS STORE\n\nВыберите интересующий вас раздел ⬇️", reply_markup)
+    await send_message(chat_id, "👋 Добро пожаловать в ETRONICS STORE
+
+Выберите интересующий вас раздел ⬇️", reply_markup)
 
 async def send_catalog_menu(chat_id: int):
     reply_markup = {
