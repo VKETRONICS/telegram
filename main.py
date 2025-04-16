@@ -14,7 +14,7 @@ app = FastAPI()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
-GROUP_CHAT_ID = os.getenv("GROUP_CHAT_ID")  # например: -1001234567890
+GROUP_CHAT_ID = os.getenv("GROUP_CHAT_ID")
 
 user_states = {}
 dialog_history = {}
@@ -40,10 +40,6 @@ async def send_daily_greeting():
             "keyboard": [[{"text": "📋 МЕНЮ"}]],
             "resize_keyboard": True
         })
-          await send_message(int(GROUP_CHAT_ID), text, {
-            "keyboard": [[{"text": "📋 МЕНЮ"}]],
-            "resize_keyboard": True
-        })
 
 @app.post("/webhook")
 async def telegram_webhook(request: Request):
@@ -55,6 +51,7 @@ async def telegram_webhook(request: Request):
         message_id = message.get("message_id")
         text = message.get("text", "")
 
+        # Приветствие новых участников
         if "new_chat_members" in message:
             now_hour = datetime.now(pytz.timezone("Europe/Moscow")).hour
             if 5 <= now_hour < 12:
@@ -88,12 +85,36 @@ async def telegram_webhook(request: Request):
             elif text == "📦 КАТАЛОГ":
                 await send_catalog_menu(chat_id)
             elif text == "ℹ️ О НАС":
-                await send_message(chat_id, "🔥 ETRONICS — ваш проводник в мире электроники! ...", {
+                about_text = (
+                    "🔥 ETRONICS - ваш проводник в мире электроники!\n\n"
+                    "💻 СБОРКА КОМПЬЮТЕРОВ НА ЗАКАЗ:\n"
+                    "• 🎮 Игровые сборки любой сложности и конфигурации\n"
+                    "• 🏢 Компьютеры для учебы, офиса и работы\n"
+                    "• 💼 Рабочие станции для профессионалов\n\n"
+                    "⚡️ ВСЕГДА В НАЛИЧИИ БОЛЬШОЙ АССОРТИМЕНТ:\n"
+                    "• 💻 Ноутбуки - от бюджетных до премиум\n"
+                    "• 📺 Телевизоры и мониторы\n"
+                    "• 🎧 Аксессуары - мыши, клавиатуры, наушники, SSD и другое\n\n"
+                    "📦 ПОЧЕМУ ВЫБИРАЮТ НАС:\n"
+                    "• 💻 Индивидуальный подход\n"
+                    "• 🧑‍💼 Профессиональная консультация\n"
+                    "• ✅ Качество комплектующих\n"
+                    "• 🚚 Быстрая доставка\n"
+                    "• 🔧 Настройка оборудования\n"
+                    "• 💬 Гарантийная и постгарантийная поддержка"
+                )
+                await send_message(chat_id, about_text, {
                     "keyboard": [[{"text": "📋 МЕНЮ"}]],
                     "resize_keyboard": True
                 })
             elif text == "📞 КОНТАКТЫ":
-                await send_message(chat_id, "📱 Контакты:\nhttps://vk.com/etronics_pro", {
+                contact_text = (
+                    "🔗 VK: https://vk.com/etronics_pro\n"
+                    "📧 Email: support@etronics.pro\n"
+                    "📱 Телефон: +7 962 915 5444\n"
+                    "🌐 Сайт: https://www.etronics.pro"
+                )
+                await send_message(chat_id, contact_text, {
                     "keyboard": [[{"text": "📋 МЕНЮ"}]],
                     "resize_keyboard": True
                 })
@@ -104,8 +125,12 @@ async def telegram_webhook(request: Request):
                     "keyboard": [[{"text": "📋 МЕНЮ"}]],
                     "resize_keyboard": True
                 })
+            elif text == "🧹 ОЧИСТИТЬ ЧАТ":
+                await clear_chat(chat_id, message_id)
+                await send_main_menu(chat_id)
             elif user_states.get(chat_id) == "gpt":
-                dialog_history.setdefault(chat_id, []).append({"role": "user", "content": text})
+                dialog_history.setdefault(chat_id, [])
+                dialog_history[chat_id].append({"role": "user", "content": text})
                 gpt_response = await ask_gpt(dialog_history[chat_id])
                 dialog_history[chat_id].append({"role": "assistant", "content": gpt_response})
                 await send_message(chat_id, gpt_response, {
