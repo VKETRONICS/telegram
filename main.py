@@ -13,8 +13,8 @@ app = FastAPI()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-GROUP_CHAT_ID = os.getenv("GROUP_CHAT_ID")  # например: -1001234567890
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
+GROUP_CHAT_ID = os.getenv("GROUP_CHAT_ID")  # например: -1001234567890
 
 user_states = {}
 dialog_history = {}
@@ -37,6 +37,10 @@ async def send_daily_greeting():
         ]
         text = random.choice(greetings) + "\n\nНажмите кнопку ниже, чтобы начать 👇"
         await send_message(int(GROUP_CHAT_ID), text, {
+            "keyboard": [[{"text": "📋 МЕНЮ"}]],
+            "resize_keyboard": True
+        })
+          await send_message(int(GROUP_CHAT_ID), text, {
             "keyboard": [[{"text": "📋 МЕНЮ"}]],
             "resize_keyboard": True
         })
@@ -84,33 +88,12 @@ async def telegram_webhook(request: Request):
             elif text == "📦 КАТАЛОГ":
                 await send_catalog_menu(chat_id)
             elif text == "ℹ️ О НАС":
-                about = (
-                    "🔥 ETRONICS - ваш проводник в мире электроники!\n\n"
-                    "💻 СБОРКА КОМПЬЮТЕРОВ НА ЗАКАЗ:\n"
-                    "• 🎮 Игровые сборки любой сложности\n"
-                    "• 🏢 ПК для офиса и учебы\n"
-                    "• 💼 Станции для профи\n\n"
-                    "⚡️ В наличии:\n"
-                    "• 💻 Ноутбуки\n"
-                    "• 📺 Мониторы\n"
-                    "• 🎧 Аксессуары\n\n"
-                    "📦 Почему мы:\n"
-                    "• Индивидуальный подход\n"
-                    "• Профконсультации\n"
-                    "• Быстрая доставка и поддержка"
-                )
-                await send_message(chat_id, about, {
+                await send_message(chat_id, "🔥 ETRONICS — ваш проводник в мире электроники! ...", {
                     "keyboard": [[{"text": "📋 МЕНЮ"}]],
                     "resize_keyboard": True
                 })
             elif text == "📞 КОНТАКТЫ":
-                contact = (
-                    "🔗 VK: https://vk.com/etronics_pro\n"
-                    "📧 Email: support@etronics.pro\n"
-                    "📱 Телефон: +7 962 915 5444\n"
-                    "🌐 Сайт: https://www.etronics.pro"
-                )
-                await send_message(chat_id, contact, {
+                await send_message(chat_id, "📱 Контакты:\nhttps://vk.com/etronics_pro", {
                     "keyboard": [[{"text": "📋 МЕНЮ"}]],
                     "resize_keyboard": True
                 })
@@ -121,9 +104,6 @@ async def telegram_webhook(request: Request):
                     "keyboard": [[{"text": "📋 МЕНЮ"}]],
                     "resize_keyboard": True
                 })
-            elif text == "🧹 ОЧИСТИТЬ ЧАТ":
-                await clear_chat(chat_id, message_id)
-                await send_main_menu(chat_id)
             elif user_states.get(chat_id) == "gpt":
                 dialog_history.setdefault(chat_id, []).append({"role": "user", "content": text})
                 gpt_response = await ask_gpt(dialog_history[chat_id])
@@ -139,62 +119,30 @@ async def telegram_webhook(request: Request):
         message_id = callback["message"]["message_id"]
         data_value = callback.get("data", "")
 
-        if data_value == "contacts":
-            await send_message(chat_id, "📱 Контакты:\nhttps://vk.com/etronics_pro", {
-                "keyboard": [[{"text": "📋 МЕНЮ"}]],
-                "resize_keyboard": True
-            })
-        elif data_value == "main_menu":
+        if data_value == "main_menu":
             await clear_chat(chat_id, message_id + 1)
             await send_main_menu(chat_id)
-        elif data_value == "laptop_workstudy":
-            markup = {
-                "inline_keyboard": [
-                    [{"text": "💻 12–14", "callback_data": "work_12_14"}],
-                    [{"text": "💻 15–16", "callback_data": "work_15_16"}],
-                    [{"text": "💻 17–18", "callback_data": "work_17_18"}],
-                    [{"text": "📋 ВСЕ", "callback_data": "work_full_list"}],
-                    [{"text": "⬅️ НАЗАД", "callback_data": "laptops"}]
-                ]
-            }
-            await send_catalog_update(chat_id, message_id, "Выберите размер:", markup)
         else:
             await handle_catalog_callbacks(chat_id, message_id, data_value)
 
     return {"ok": True}
 
-# Вспомогательные функции
-
-async def handle_catalog_callbacks(chat_id: int, message_id: int, data_value: str):
-    subcategories = {
-        "catalog": [
-            ("💻 НОУТБУКИ", "laptops"),
-            ("🖥 ГОТОВЫЕ ПК", "ready_pcs"),
-            ("📱 СМАРТФОНЫ", "phones_smart"),
-            ("📱 ПЛАНШЕТЫ", "tablets"),
-            ("📚 ЭЛЕКТРОННЫЕ КНИГИ", "ebooks")
-        ]
-    }
-    if data_value in subcategories:
-        markup = {
-            "inline_keyboard": [[{"text": name, "callback_data": cb}] for name, cb in subcategories[data_value]]
-        }
-        await send_catalog_update(chat_id, message_id, "Выберите подкатегорию:", markup)
+# Вспомогательные функции:
 
 async def send_message(chat_id: int, text: str, reply_markup=None):
     payload = {"chat_id": chat_id, "text": text}
     if reply_markup:
         payload["reply_markup"] = reply_markup
-    try:
-        async with httpx.AsyncClient() as client:
-            await client.post(f"{TELEGRAM_API_URL}/sendMessage", json=payload)
-    except Exception as e:
-        print(f"Ошибка при отправке сообщения: {e}")
+    async with httpx.AsyncClient() as client:
+        await client.post(f"{TELEGRAM_API_URL}/sendMessage", json=payload)
 
 async def clear_chat(chat_id: int, until_message_id: int):
     async with httpx.AsyncClient() as client:
         for msg_id in range(until_message_id - 1, until_message_id - 15, -1):
-            await client.post(f"{TELEGRAM_API_URL}/deleteMessage", json={"chat_id": chat_id, "message_id": msg_id})
+            await client.post(f"{TELEGRAM_API_URL}/deleteMessage", json={
+                "chat_id": chat_id,
+                "message_id": msg_id
+            })
 
 async def send_main_menu(chat_id: int):
     markup = {
@@ -227,6 +175,28 @@ async def send_catalog_update(chat_id: int, message_id: int, text: str, reply_ma
             "text": text,
             "reply_markup": reply_markup
         })
+
+async def handle_catalog_callbacks(chat_id: int, message_id: int, data_value: str):
+    subcategories = {
+        "laptops": [
+            ("🎮 ИГРОВЫЕ НОУТБУКИ", "laptop_gaming"),
+            ("👨‍🎓 ДЛЯ РАБОТЫ И УЧЁБЫ", "laptop_workstudy"),
+            ("⬅️ НАЗАД", "catalog")
+        ],
+        "catalog": [
+            ("💻 НОУТБУКИ", "laptops"),
+            ("🖥 ГОТОВЫЕ ПК", "ready_pcs"),
+            ("📱 СМАРТФОНЫ", "phones_smart"),
+            ("📱 ПЛАНШЕТЫ", "tablets"),
+            ("📚 ЭЛЕКТРОННЫЕ КНИГИ", "ebooks")
+        ]
+    }
+
+    if data_value in subcategories:
+        markup = {
+            "inline_keyboard": [[{"text": name, "callback_data": cb}] for name, cb in subcategories[data_value]]
+        }
+        await send_catalog_update(chat_id, message_id, "Выберите подкатегорию:", markup)
 
 async def ask_gpt(messages: list) -> str:
     try:
