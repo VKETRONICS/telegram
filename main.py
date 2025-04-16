@@ -421,6 +421,6 @@ async def send_main_menu(chat_id: int):
         ],
         "resize_keyboard": True
     }
-    await send_message(chat_id, "👋 Добро пожаловать в ETRONICS STORE
+await send_message(chat_id, "👋 Добро пожаловать в ETRONICS STORE\n\nВыберите интересующий вас раздел ⬇️", reply_markup)
 
 Выберите интересующий вас раздел ⬇️", reply_markup)
