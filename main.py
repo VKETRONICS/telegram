@@ -1,6 +1,8 @@
+# -*- coding: utf-8 -*-
+import os
+import logging
 from fastapi import FastAPI, Request
 import httpx
-import os
 from dotenv import load_dotenv
 import openai
 from datetime import datetime
@@ -12,7 +14,8 @@ app = FastAPI()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-GROUP_CHAT_ID = os.getenv("GROUP_CHAT_ID")  # например: -1001234567890
+GROUP_CHAT_ID = os.getenv("GROUP_CHAT_ID")
+BOT_USERNAME = os.getenv("BOT_USERNAME", "")
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
 user_states = {}
@@ -119,15 +122,23 @@ async def telegram_webhook(request: Request):
     return {"ok": True}
 
 async def send_main_menu(chat_id: int):
-    reply_markup = {
-        "keyboard": [
-            [{"text": "📦 КАТАЛОГ"}],
-            [{"text": "ℹ️ О НАС"}, {"text": "📞 КОНТАКТЫ"}],
-            [{"text": "❓ ПОМОЩЬ"}]
-        ],
-        "resize_keyboard": True
-    }
-    await send_message(chat_id, "👋 Добро пожаловать в ETRONICS STORE\n\nВыберите интересующий вас раздел ⬇️", reply_markup)
+    if str(chat_id).startswith("-100"):
+        reply_markup = {
+            "inline_keyboard": [
+                [{"text": "📋 МЕНЮ", "url": f"https://t.me/{BOT_USERNAME}?start=menu"}]
+            ]
+        }
+        await send_message(chat_id, "👋 Напишите мне в личные сообщения, чтобы начать", reply_markup)
+    else:
+        reply_markup = {
+            "keyboard": [
+                [{"text": "📦 КАТАЛОГ"}],
+                [{"text": "ℹ️ О НАС"}, {"text": "📞 КОНТАКТЫ"}],
+                [{"text": "❓ ПОМОЩЬ"}]
+            ],
+            "resize_keyboard": True
+        }
+        await send_message(chat_id, "👋 Добро пожаловать в ETRONICS STORE\n\nВыберите интересующий вас раздел ⬇️", reply_markup)
 
 async def send_catalog_menu(chat_id: int):
     reply_markup = {
