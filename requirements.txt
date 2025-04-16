@@ -5,4 +5,3 @@ python-dotenv
 openai
 apscheduler
 pytz
-pytelegrambotapi
