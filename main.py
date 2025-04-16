@@ -56,6 +56,11 @@ async def telegram_webhook(request: Request):
         chat_id = message.get("chat", {}).get("id")
         message_id = message.get("message_id")
         text = message.get("text", "")
+        chat_type = message.get("chat", {}).get("type", "")
+
+        # Блокируем команды в группах
+        if chat_type != "private":
+            return {"ok": True}
 
         if chat_id and text:
             if text in ["/menu", "📋 МЕНЮ"] or text.startswith("/start"):
